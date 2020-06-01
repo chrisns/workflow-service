@@ -65,7 +65,7 @@ spec:
             memory: "6144Mi"
             cpu: "4000m"
         ports:
-          - name: workflow-service
+          - name: http
             containerPort: 8080
         readinessProbe:
           httpGet:
