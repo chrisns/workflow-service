@@ -8,6 +8,7 @@ import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoryEvent;
+import org.camunda.bpm.engine.impl.history.event.HistoryEventTypes;
 import org.camunda.bpm.engine.impl.history.handler.HistoryEventHandler;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -37,6 +38,11 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
     private final RepositoryService repositoryService;
     private final HistoryService historyService;
     private final FormObjectSplitter formObjectSplitter;
+
+    static {
+        VARIABLE_EVENT_TYPES.add(HistoryEventTypes.VARIABLE_INSTANCE_CREATE.getEventName());
+        VARIABLE_EVENT_TYPES.add(HistoryEventTypes.VARIABLE_INSTANCE_UPDATE.getEventName());
+    }
 
     @Override
     public void handleEvent(HistoryEvent historyEvent) {
@@ -77,7 +83,7 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
                                             id -> getAttribute(
                                                     model, "product",
                                                     s -> s,
-                                                    "forms"
+                                                    ""
                                             ));
                             forms.forEach(form ->
                                     {

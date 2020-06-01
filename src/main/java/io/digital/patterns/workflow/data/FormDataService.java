@@ -53,7 +53,8 @@ public class FormDataService {
 
             final String key = key(businessKey, formName, submittedBy, submissionDate);
 
-            String bucketName = awsProperties.getBucketName() + "-" +  product;
+            String bucketName = awsProperties.getBucketName() + (!product.equalsIgnoreCase("") ?
+                    "-" +  product : "");
 
             boolean dataExists = amazonS3.doesObjectExist(bucketName, key);
             if (!dataExists) {
@@ -70,7 +71,7 @@ public class FormDataService {
                 metadata.addUserMetadata("submittedby", submittedBy);
                 metadata.addUserMetadata("submissiondate", submissionDate);
 
-                PutObjectRequest request = new PutObjectRequest(product, key, scratchFile);
+                PutObjectRequest request = new PutObjectRequest(bucketName, key, scratchFile);
                 request.setMetadata(metadata);
                 final PutObjectResult putObjectResult = amazonS3.putObject(request);
                 log.debug("Uploaded to S3 '{}'", putObjectResult.getETag());

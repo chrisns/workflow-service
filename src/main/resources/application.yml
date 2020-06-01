@@ -23,6 +23,8 @@ camunda:
   bpm:
     authorization:
       enabled: true
+    webapp:
+      application-path:
 
 server:
   servlet.context-path: /camunda
@@ -61,4 +63,12 @@ plugin.identity.keycloak:
   clientId: ${keycloak.client.id}
   clientSecret: ${keycloak.client.secret}
   useEmailAsCamundaUserId: true
+  useUsernameAsCamundaUserId: false
+  useGroupPathAsCamundaGroupId: true
   administratorGroupName: ${camunda.admin.group:camunda-admin}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health, info, prometheus, metrics"
