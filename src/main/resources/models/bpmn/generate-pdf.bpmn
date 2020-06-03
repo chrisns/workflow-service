@@ -14,7 +14,7 @@
           <camunda:script scriptFormat="Groovy">def form = execution.getVariable('form');
 
 
-print('Processing ' + form.prop('name').stringValue());</camunda:script>
+                        print('Processing ' + form.prop('name').stringValue());</camunda:script>
         </camunda:executionListener>
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_0pxxy0p</bpmn:incoming>
@@ -25,9 +25,9 @@ print('Processing ' + form.prop('name').stringValue());</camunda:script>
           <camunda:executionListener event="start">
             <camunda:script scriptFormat="Groovy">def form = execution.getVariable("form")
 
-def message = "pdfGenerated_" + form.prop("name").stringValue() + "_"+ form.prop('submissionDate').stringValue()
+                            def message = "pdfGenerated_" + form.prop("name").stringValue() + "_"+ form.prop('submissionDate').stringValue()
 
-message</camunda:script>
+                            message</camunda:script>
           </camunda:executionListener>
         </bpmn:extensionElements>
         <bpmn:outgoing>SequenceFlow_1s755ya</bpmn:outgoing>
@@ -54,31 +54,31 @@ message</camunda:script>
         <bpmn:outgoing>SequenceFlow_08b7b88</bpmn:outgoing>
         <bpmn:outgoing>SequenceFlow_18cjlsg</bpmn:outgoing>
       </bpmn:eventBasedGateway>
-      <bpmn:intermediateCatchEvent id="IntermediateCatchEvent_14tlniz" name="PDF generation expired">
+      <bpmn:intermediateCatchEvent id="timerExpires" name="PDF generation expired">
         <bpmn:incoming>SequenceFlow_08b7b88</bpmn:incoming>
         <bpmn:outgoing>SequenceFlow_1eq1tme</bpmn:outgoing>
         <bpmn:timerEventDefinition>
           <bpmn:timeDate xsi:type="bpmn:tFormalExpression">#{dateTime().plusMinutes(10).toDate()}</bpmn:timeDate>
         </bpmn:timerEventDefinition>
       </bpmn:intermediateCatchEvent>
-      <bpmn:sequenceFlow id="SequenceFlow_08b7b88" sourceRef="waitingForPDFResponse" targetRef="IntermediateCatchEvent_14tlniz" />
-      <bpmn:sequenceFlow id="SequenceFlow_1eq1tme" sourceRef="IntermediateCatchEvent_14tlniz" targetRef="pdfFailureUserTask" />
+      <bpmn:sequenceFlow id="SequenceFlow_08b7b88" sourceRef="waitingForPDFResponse" targetRef="timerExpires" />
+      <bpmn:sequenceFlow id="SequenceFlow_1eq1tme" sourceRef="timerExpires" targetRef="pdfFailureUserTask" />
       <bpmn:userTask id="pdfFailureUserTask" name="Investigate generate PDF for failure ${S(form).prop(&#39;name&#39;).stringValue()}" camunda:formKey="investigateFormPDF" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}" camunda:priority="1000">
         <bpmn:extensionElements>
           <camunda:taskListener event="create">
             <camunda:script scriptFormat="JavaScript">var description = '';
-var form = task.getVariable('form');
+                            var form = task.getVariable('form');
 
-var errorCode = task.getVariable('pdfGenErrorCode');
-var errorMessage = task.getVariable('pdfGenErrorMessage');
+                            var errorCode = task.getVariable('pdfGenErrorCode');
+                            var errorMessage = task.getVariable('pdfGenErrorMessage');
 
-if (errorCode &amp;&amp; errorMessage) {
-  description = errorCode + " - "  + errorMessage
-} else {
-  description = 'PDF for' +  form.prop('name').stringValue() + ' has not been generated'
-}
+                            if (errorCode &amp;&amp; errorMessage) {
+                            description = errorCode + " - "  + errorMessage
+                            } else {
+                            description = 'PDF for ' +  form.prop('name').stringValue() + ' has not been generated'
+                            }
 
-task.setDescription(description);</camunda:script>
+                            task.setDescription(description);</camunda:script>
           </camunda:taskListener>
         </bpmn:extensionElements>
         <bpmn:incoming>SequenceFlow_1eq1tme</bpmn:incoming>
@@ -98,7 +98,7 @@ task.setDescription(description);</camunda:script>
       <bpmn:sequenceFlow id="SequenceFlow_183opfz" name="no" sourceRef="ExclusiveGateway_0mzrm7m" targetRef="EndEvent_1mmwa26">
         <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${S(investigateFormPDF).prop('retry').boolValue() == false}</bpmn:conditionExpression>
       </bpmn:sequenceFlow>
-      <bpmn:boundaryEvent id="BoundaryEvent_1s3reb9" attachedToRef="generatePdf">
+      <bpmn:boundaryEvent id="BoundaryEvent_1s3reb9" name="FAILED_TO_REQUEST_PDF_GENERATION" attachedToRef="generatePdf">
         <bpmn:outgoing>SequenceFlow_17zai9v</bpmn:outgoing>
         <bpmn:errorEventDefinition errorRef="Error_021xlvi" camunda:errorCodeVariable="pdfGenErrorCode" camunda:errorMessageVariable="pdfGenErrorMessage" />
       </bpmn:boundaryEvent>
@@ -107,15 +107,15 @@ task.setDescription(description);</camunda:script>
         <bpmn:extensionElements>
           <camunda:executionListener event="end">
             <camunda:script scriptFormat="groovy">def form = execution.getVariable("form");
-def formName = form.prop("name").stringValue();
-def response = execution.getVariable(formName);
+                            def formName = form.prop("name").stringValue();
+                            def response = execution.getVariable(formName);
 
-if (response.prop("event").stringValue() != 'pdf-generation-failed') {
-def fileName = response.prop("data").prop("fileName").stringValue();
-def attachmentIds = execution.getVariable("attachmentIds");
-attachmentIds.add(fileName);
-execution.setVariable("attachmentIds", attachmentIds);
-}</camunda:script>
+                            if (response.prop("event").stringValue() != 'pdf-generation-failed') {
+                            def fileName = response.prop("data").prop("fileName").stringValue();
+                            def attachmentIds = execution.getVariable("attachmentIds");
+                            attachmentIds.add(fileName);
+                            execution.setVariable("attachmentIds", attachmentIds);
+                            }</camunda:script>
           </camunda:executionListener>
         </bpmn:extensionElements>
         <bpmn:incoming>SequenceFlow_18cjlsg</bpmn:incoming>
@@ -131,17 +131,17 @@ execution.setVariable("attachmentIds", attachmentIds);
       <bpmn:sequenceFlow id="SequenceFlow_19z8dip" sourceRef="pdfResponseReceived" targetRef="ExclusiveGateway_0haw0bx" />
       <bpmn:sequenceFlow id="SequenceFlow_11yblxc" name="yes" sourceRef="ExclusiveGateway_0haw0bx" targetRef="EndEvent_1mmwa26">
         <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def form = execution.getVariable("form");
-def formName = form.prop("name").stringValue();
-def response = execution.getVariable(formName);
+                    def formName = form.prop("name").stringValue();
+                    def response = execution.getVariable(formName);
 
-response.prop("event").stringValue() == 'pdf-generation-success'</bpmn:conditionExpression>
+                    response.prop("event").stringValue() == 'pdf-generation-success'</bpmn:conditionExpression>
       </bpmn:sequenceFlow>
       <bpmn:sequenceFlow id="SequenceFlow_14cudur" name="no" sourceRef="ExclusiveGateway_0haw0bx" targetRef="pdfFailureUserTask">
         <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def form = execution.getVariable("form");
-def formName = form.prop("name").stringValue();
-def response = execution.getVariable(formName);
+                    def formName = form.prop("name").stringValue();
+                    def response = execution.getVariable(formName);
 
-response.prop("event").stringValue() == 'pdf-generation-failed'</bpmn:conditionExpression>
+                    response.prop("event").stringValue() == 'pdf-generation-failed'</bpmn:conditionExpression>
       </bpmn:sequenceFlow>
     </bpmn:subProcess>
     <bpmn:sequenceFlow id="SequenceFlow_1kdwnxi" sourceRef="formsProcessing" targetRef="sendpdfs" />
@@ -155,7 +155,7 @@ response.prop("event").stringValue() == 'pdf-generation-failed'</bpmn:conditionE
         <camunda:executionListener event="start">
           <camunda:script scriptFormat="groovy">def attachmentIds = new ArrayList()
 
-execution.setVariable("attachmentIds", attachmentIds);</camunda:script>
+                        execution.setVariable("attachmentIds", attachmentIds);</camunda:script>
         </camunda:executionListener>
       </bpmn:extensionElements>
       <bpmn:outgoing>SequenceFlow_0pxxy0p</bpmn:outgoing>
@@ -167,60 +167,85 @@ execution.setVariable("attachmentIds", attachmentIds);</camunda:script>
           <camunda:inputParameter name="recipients">
             <camunda:script scriptFormat="groovy">def recipients = execution.getVariable("recipients");
 
-def initiatedBy = execution.getVariable("initiatedBy");
+                            def initiatedBy = execution.getVariable("initiatedBy");
 
-if (recipients == null) {
-   recipients = [initiatedBy];
-}
+                            if (recipients == null) {
+                            recipients = [initiatedBy];
+                            }
 
-recipients</camunda:script>
+                            recipients</camunda:script>
           </camunda:inputParameter>
           <camunda:inputParameter name="body">
             <camunda:script scriptFormat="groovy">def messageBody = execution.getVariable("messageBody");
-if (messageBody == null) {
- messageBody = """&lt;html&gt;
-                &lt;head&gt;
-                &lt;/head&gt;
-&lt;body&gt;
-&lt;p&gt;Dear ${initiatedBy}&lt;/p&gt;
+                            if (messageBody == null) {
+                            messageBody = """&lt;html&gt;
+                            &lt;head&gt;
+                            &lt;/head&gt;
+                            &lt;body&gt;
+                            &lt;p&gt;Dear ${initiatedBy}&lt;/p&gt;
 
-                &lt;h2&gt;PDFs for ${S(generatePdf).prop('businessKey').stringValue()} generated&lt;/h2&gt;
+                            &lt;h2&gt;PDFs for ${S(generatePdf).prop('businessKey').stringValue()} generated&lt;/h2&gt;
 
-&lt;p&gt;Please find attached pdfs of the forms you requested&lt;/p&gt;
+                            &lt;p&gt;Please find attached pdfs of the forms you requested&lt;/p&gt;
 
 
-                &lt;p&gt;Kind regards&lt;/p&gt;
-&lt;p&gt;Central Operations Platform (COP)&lt;/p&gt;
-                &lt;/body&gt;
-&lt;/html&gt;"""
+                            &lt;p&gt;Kind regards&lt;/p&gt;
+                            &lt;p&gt;Central Operations Platform (COP)&lt;/p&gt;
+                            &lt;/body&gt;
+                            &lt;/html&gt;"""
 
-}
+                            }
 
-messageBody</camunda:script>
+                            messageBody</camunda:script>
           </camunda:inputParameter>
           <camunda:inputParameter name="subject">
             <camunda:script scriptFormat="groovy">def messageSubject = execution.getVariable("messageSubject");
 
-if (messageSubject == null) {
-  messageSubject = "PDFs of ${S(generatePdf).prop('businessKey').stringValue()} generated"
-}
+                            if (messageSubject == null) {
+                            messageSubject = "PDFs of ${S(generatePdf).prop('businessKey').stringValue()} generated"
+                            }
 
-messageSubject;</camunda:script>
+                            messageSubject;</camunda:script>
           </camunda:inputParameter>
           <camunda:inputParameter name="attachmentIds">${attachmentIds}</camunda:inputParameter>
         </camunda:inputOutput>
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_1kdwnxi</bpmn:incoming>
+      <bpmn:incoming>Flow_16b97d6</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0daqjil</bpmn:outgoing>
     </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="Event_0hi4bgp" name="FAILED_TO_SEND_SES" attachedToRef="sendpdfs">
+      <bpmn:outgoing>Flow_13nq98w</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0ch5lfu" errorRef="Error_03mtyem" camunda:errorCodeVariable="sesFailureCode" camunda:errorMessageVariable="sesFailureMessage" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_13nq98w" sourceRef="Event_0hi4bgp" targetRef="Activity_0as772s" />
+    <bpmn:sequenceFlow id="Flow_16b97d6" sourceRef="Activity_0as772s" targetRef="sendpdfs" />
+    <bpmn:userTask id="Activity_0as772s" name="Investigate SES send failure ${sesFailureCode}" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}">
+      <bpmn:documentation>Failed to send pdf via SES due to ${sesFailureCode} with underlying exception ${sesFailureMessage}</bpmn:documentation>
+      <bpmn:incoming>Flow_13nq98w</bpmn:incoming>
+      <bpmn:outgoing>Flow_16b97d6</bpmn:outgoing>
+    </bpmn:userTask>
   </bpmn:process>
   <bpmn:message id="Message_11n8ws1" name="pdfGenerated_${S(form).prop(&#39;name&#39;).stringValue()}_${S(form).prop(&#39;submissionDate&#39;).stringValue()}" />
-  <bpmn:error id="Error_021xlvi" name="failedToGeneratePDF" />
+  <bpmn:error id="Error_021xlvi" name="FAILED_TO_REQUEST_PDF_GENERATION" />
+  <bpmn:error id="Error_03mtyem" name="FAILED_TO_SEND_SES" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0vkjzw7">
       <bpmndi:BPMNShape id="Participant_0rvftts_di" bpmnElement="Participant_0rvftts" isHorizontal="true">
         <dc:Bounds x="129" y="75" width="1581" height="535" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_16b97d6_di" bpmnElement="Flow_16b97d6">
+        <di:waypoint x="1470" y="470" />
+        <di:waypoint x="1550" y="470" />
+        <di:waypoint x="1550" y="550" />
+        <di:waypoint x="1250" y="550" />
+        <di:waypoint x="1250" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13nq98w_di" bpmnElement="Flow_13nq98w">
+        <di:waypoint x="1340" y="398" />
+        <di:waypoint x="1340" y="470" />
+        <di:waypoint x="1370" y="470" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SequenceFlow_0pxxy0p_di" bpmnElement="SequenceFlow_0pxxy0p">
         <di:waypoint x="238" y="360" />
         <di:waypoint x="415" y="360" />
@@ -316,7 +341,7 @@ messageSubject;</camunda:script>
       <bpmndi:BPMNShape id="EventBasedGateway_1o99ewc_di" bpmnElement="waitingForPDFResponse">
         <dc:Bounds x="685" y="265" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="IntermediateCatchEvent_14tlniz_di" bpmnElement="IntermediateCatchEvent_14tlniz">
+      <bpmndi:BPMNShape id="IntermediateCatchEvent_14tlniz_di" bpmnElement="timerExpires">
         <dc:Bounds x="732" y="362" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="711" y="396" width="78" height="27" />
@@ -342,6 +367,9 @@ messageSubject;</camunda:script>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BoundaryEvent_0nig9x3_di" bpmnElement="BoundaryEvent_1s3reb9">
         <dc:Bounds x="632" y="312" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="599" y="350" width="81" height="40" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_11l4d1r_di" bpmnElement="EndEvent_11l4d1r">
         <dc:Bounds x="1482" y="322" width="36" height="36" />
@@ -357,6 +385,15 @@ messageSubject;</camunda:script>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ServiceTask_0pdcb4o_di" bpmnElement="sendpdfs">
         <dc:Bounds x="1240" y="300" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_039zo40_di" bpmnElement="Activity_0as772s">
+        <dc:Bounds x="1370" y="430" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0r0naoe_di" bpmnElement="Event_0hi4bgp">
+        <dc:Bounds x="1322" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1300" y="406" width="80" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_06dt5lt_di" bpmnElement="Participant_0f95rek" isHorizontal="true">
         <dc:Bounds x="260" y="680" width="440" height="60" />
