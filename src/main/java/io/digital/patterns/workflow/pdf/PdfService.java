@@ -41,15 +41,13 @@ public class PdfService {
 
     private final AmazonS3 amazonS3;
     private final AmazonSimpleEmailService amazonSimpleEmailService;
-    private final RuntimeService runtimeService;
     private final Environment environment;
     private final RestTemplate restTemplate;
 
     public PdfService(AmazonS3 amazonS3, AmazonSimpleEmailService amazonSimpleEmailService,
-                      RuntimeService runtimeService, Environment environment, RestTemplate restTemplate) {
+                     Environment environment, RestTemplate restTemplate) {
         this.amazonS3 = amazonS3;
         this.amazonSimpleEmailService = amazonSimpleEmailService;
-        this.runtimeService = runtimeService;
         this.environment = environment;
         this.restTemplate = restTemplate;
     }
@@ -135,7 +133,7 @@ public class PdfService {
 
             log.info("PDF request submitted response status '{}'", response.getStatusCodeValue());
         } catch (Exception e) {
-            log.error("Failed to send PDF '{}'", e.getMessage());
+
             String configuration = new JSONObject(Map.of(
                     "formName", formName,
                     "dataKey", key,
@@ -143,16 +141,7 @@ public class PdfService {
                     "exception", e.getMessage()
 
             )).toString();
-            try {
-
-                runtimeService.createIncident(
-                        "FAILED_TO_REQUEST_PDF_GENERATION",
-                        execution.getId(),
-                        configuration
-                );
-            } catch (Exception rex) {
-                log.error("Failed to create incident {}", rex.getMessage());
-            }
+            log.error("Failed to send PDF '{}'", e.getMessage());
             throw new BpmnError("FAILED_TO_REQUEST_PDF_GENERATION",configuration, e);
         }
 
@@ -216,18 +205,6 @@ public class PdfService {
 
             log.info("SES send result {}", result.getMessageId());
         } catch (Exception e) {
-            log.error("Failed to send SES '{}'", e.getMessage());
-            try {
-                runtimeService.createIncident(
-                        "FAILED_TO_SEND_SES",
-                        execution.getId(),
-                        new JSONObject(Map.of(
-                                "exception", e.getMessage()
-                        )).toString()
-                );
-            } catch (Exception rex) {
-                log.error("Failed to create incident {}", rex.getMessage());
-            }
             log.error("Failed to send SES", e);
             throw new BpmnError("FAILED_TO_SEND_SES", e.getMessage(), e);
         }

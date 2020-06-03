@@ -24,7 +24,6 @@ import org.springframework.web.client.RestTemplate
 import org.testcontainers.containers.localstack.LocalStackContainer
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.util.concurrent.PollingConditions
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import static com.github.tomakehurst.wiremock.http.Response.response
@@ -33,6 +32,7 @@ import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.execute
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.job
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.repositoryService
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.runtimeService
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.task
 import static org.camunda.spin.Spin.S
 
 class PdfServiceSpec extends Specification {
@@ -89,7 +89,6 @@ class PdfServiceSpec extends Specification {
         pdfService = new PdfService(
                 amazonS3,
                 amazonSimpleEmailService,
-                engineRule.runtimeService,
                 environment,
                 restTemplate
         )
@@ -174,6 +173,10 @@ class PdfServiceSpec extends Specification {
                 .camundaInputParameter('form', '${exampleForm.prop(\'form\')}')
                 .camundaInputParameter('product', 'test')
                 .camundaInputParameter('businessKey', '${exampleForm.prop(\'businessKey\').stringValue()}')
+                .boundaryEvent()
+                .error('FAILED_TO_REQUEST_PDF_GENERATION')
+                .userTask()
+                .name('Investigate issue')
                 .camundaAsyncAfter()
                 .endEvent().camundaAsyncBefore().camundaAsyncAfter()
                 .done()
@@ -204,9 +207,7 @@ class PdfServiceSpec extends Specification {
         when: 'async task is executed'
         execute(job())
 
-        then: 'incident is created'
-        assertThat(instance).isActive()
-        def incidents = runtimeService().createIncidentQuery().processInstanceId(instance.id).list()
-        incidents.size() != 0
+        then: 'user task created'
+        assertThat(task()).hasName('Investigate issue')
     }
 }
