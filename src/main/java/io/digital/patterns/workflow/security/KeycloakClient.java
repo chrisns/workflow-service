@@ -30,7 +30,7 @@ public class KeycloakClient {
                           @Value("${keycloak.realm}") final String authRealm,
                           @Value("${keycloak.client.id}") final String clientId,
                           @Value("${keycloak.client.secret}") String clientSecret) throws URISyntaxException {
-        this.authUrl = new URI(authUrl + "/realms/" + authRealm + "/protocol/openid-connect/token");
+        this.authUrl = new URI(authUrl + "/auth/realms/" + authRealm + "/protocol/openid-connect/token");
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.restTemplate = new RestTemplate();

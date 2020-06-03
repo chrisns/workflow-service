@@ -31,6 +31,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 
 @ContextConfiguration
@@ -53,9 +54,6 @@ class WebHookControllerSpec extends Specification {
 
     @Autowired
     WebApplicationContext context
-
-    @Autowired
-    WebhookController controller
 
     MockMvc mvc
 
@@ -117,9 +115,10 @@ class WebHookControllerSpec extends Specification {
                           }
                         }'''
 
-        def result = mvc.perform(MockMvcRequestBuilders.post("/api/process-instance/webhook/${processInstance.id}/message/messageWaiting?variableName=testVariableMessage")
+        def result = mvc.perform(MockMvcRequestBuilders
+                .post("/webhook/process-instance/${processInstance.id}/message/messageWaiting?variableName=testVariableMessage")
                 .content(eventPayload)
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON).with(csrf()))
 
         then: 'Response should be successful'
         result.andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
@@ -163,7 +162,7 @@ class WebHookControllerSpec extends Specification {
         def processInstance = runtimeService.startProcessInstanceByKey('simple', businessKey)
 
         when: 'Web hook post with no body'
-        def result = mvc.perform(MockMvcRequestBuilders.post("/api/process-instance/webhook/${processInstance.id}/message/messageWaiting?variableName=testVariableMessage")
+        def result = mvc.perform(MockMvcRequestBuilders.post("/webhook/process-instance/${processInstance.id}/message/messageWaiting?variableName=testVariableMessage")
                 .content('')
                 .contentType(MediaType.APPLICATION_JSON))
 
@@ -200,9 +199,9 @@ class WebHookControllerSpec extends Specification {
                              "location": "http://s3/location/myfile.pdf"
                           }
                         }'''
-        def result = mvc.perform(MockMvcRequestBuilders.post("/api/process-instance/webhook/invalidBusinessKey/message/messageWaiting?variableName=testVariableMessage")
+        def result = mvc.perform(MockMvcRequestBuilders.post("/webhook/process-instance/invalidBusinessKey/message/messageWaiting?variableName=testVariableMessage")
                 .content(eventPayload)
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON).with(csrf()))
 
         then: 'Response should be 404'
         result.andExpect(MockMvcResultMatchers.status().isNotFound())

@@ -17,7 +17,7 @@ import static org.camunda.spin.Spin.S;
 
 @RestController
 @Slf4j
-@RequestMapping(path = "/api/process-instance/webhook")
+@RequestMapping(path = "/webhook/process-instance")
 public class WebhookController {
 
     private final RuntimeService runtimeService;

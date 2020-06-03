@@ -15,7 +15,7 @@ class KeycloakClientSpec extends Specification {
 
     def shouldReturnAccessToken() {
         given:
-        WireMock.stubFor(WireMock.post("/realms/myRealm/protocol/openid-connect/token")
+        WireMock.stubFor(WireMock.post("/auth/realms/myRealm/protocol/openid-connect/token")
                 .withHeader("Content-Type", WireMock.equalTo("application/x-www-form-urlencoded;charset=UTF-8"))
                 .withHeader("Authorization", WireMock.equalTo("Basic Y2xpZW50X2lkOnZlcnlfc2VjcmV0"))
                 .withHeader("Accept", WireMock.equalTo("application/json"))
