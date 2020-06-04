@@ -40,7 +40,7 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
     @Override
     public void configure(final HttpSecurity http) throws Exception {
         http
-                .csrf().ignoringAntMatchers("/api/**", "/engine-rest/**", "/webhook/**")
+                .csrf().ignoringAntMatchers("/api/**", "/engine-rest/**", "/webhook/**", "/actuator/**")
                 .and()
                 .antMatcher("/engine-rest/**")
                 .authorizeRequests()

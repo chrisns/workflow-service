@@ -218,9 +218,9 @@
       <bpmn:outgoing>Flow_13nq98w</bpmn:outgoing>
       <bpmn:errorEventDefinition id="ErrorEventDefinition_0ch5lfu" errorRef="Error_03mtyem" camunda:errorCodeVariable="sesFailureCode" camunda:errorMessageVariable="sesFailureMessage" />
     </bpmn:boundaryEvent>
-    <bpmn:sequenceFlow id="Flow_13nq98w" sourceRef="Event_0hi4bgp" targetRef="Activity_0as772s" />
-    <bpmn:sequenceFlow id="Flow_16b97d6" sourceRef="Activity_0as772s" targetRef="sendpdfs" />
-    <bpmn:userTask id="Activity_0as772s" name="Investigate SES send failure ${sesFailureCode}" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}">
+    <bpmn:sequenceFlow id="Flow_13nq98w" sourceRef="Event_0hi4bgp" targetRef="sendpdfsFailure" />
+    <bpmn:sequenceFlow id="Flow_16b97d6" sourceRef="sendpdfsFailure" targetRef="sendpdfs" />
+    <bpmn:userTask id="sendpdfsFailure" name="Investigate SES send failure ${sesFailureCode}" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}">
       <bpmn:documentation>Failed to send pdf via SES due to ${sesFailureCode} with underlying exception ${sesFailureMessage}</bpmn:documentation>
       <bpmn:incoming>Flow_13nq98w</bpmn:incoming>
       <bpmn:outgoing>Flow_16b97d6</bpmn:outgoing>
@@ -386,7 +386,7 @@
       <bpmndi:BPMNShape id="ServiceTask_0pdcb4o_di" bpmnElement="sendpdfs">
         <dc:Bounds x="1240" y="300" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_039zo40_di" bpmnElement="Activity_0as772s">
+      <bpmndi:BPMNShape id="Activity_039zo40_di" bpmnElement="sendpdfsFailure">
         <dc:Bounds x="1370" y="430" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0r0naoe_di" bpmnElement="Event_0hi4bgp">
