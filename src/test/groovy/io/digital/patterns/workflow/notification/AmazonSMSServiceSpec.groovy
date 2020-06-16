@@ -18,6 +18,7 @@ import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.execute
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.job
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.repositoryService
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.runtimeService
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.task
 import static org.camunda.spin.Spin.S
 
 class AmazonSMSServiceSpec extends Specification {
@@ -45,7 +46,7 @@ class AmazonSMSServiceSpec extends Specification {
                 .withEndpointConfiguration(localstack.getEndpointConfiguration(LocalStackContainer.Service.SNS))
                 .withCredentials(localstack.getDefaultCredentialsProvider()).build()
 
-        amazonSMSService = new AmazonSMSService( client,engineRule.runtimeService)
+        amazonSMSService = new AmazonSMSService(client)
 
         Mocks.register('amazonSMSService', amazonSMSService)
     }
@@ -58,7 +59,7 @@ class AmazonSMSServiceSpec extends Specification {
                 .camundaFormKey('sampleForm')
                 .serviceTask('sendSMS')
                 .name('sendSMS')
-                .camundaExpression('${amazonSMSService.sendSMS(phoneNumber, message, execution.getId())}')
+                .camundaExpression('${amazonSMSService.sendSMS(phoneNumber, message)}')
                 .camundaInputParameter('phoneNumber', '08444343242343')
                 .camundaInputParameter('message', 'Hello')
                 .endEvent()
@@ -88,7 +89,7 @@ class AmazonSMSServiceSpec extends Specification {
 
     }
 
-    def 'incident created if sms fails'() {
+    def 'user task created if sms fails'() {
         def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
         given: 'a process that wants to send a SMS'
         BpmnModelInstance modelInstance = Bpmn.createExecutableProcess("sms2")
@@ -97,11 +98,14 @@ class AmazonSMSServiceSpec extends Specification {
                 .camundaFormKey('sampleForm')
                 .serviceTask('sendSMS')
                 .name('sendSMS')
-                .camundaExpression('${amazonSMSService.sendSMS(phoneNumber, message, execution.getId())}')
+                .camundaExpression('${amazonSMSService.sendSMS(phoneNumber, message)}')
                 .camundaInputParameter('phoneNumber', null)
                 .camundaInputParameter('message', null)
                 .camundaAsyncAfter()
                 .camundaAsyncBefore()
+                .boundaryEvent()
+                    .error("SMS_FAILURE")
+                    .userTask().name("Handle exception")
                 .endEvent()
                 .done()
 
@@ -131,10 +135,7 @@ class AmazonSMSServiceSpec extends Specification {
         when: 'async task is executed'
         execute(job())
 
-        then: 'incident is created'
-        def incidents = runtimeService().createIncidentQuery()
-                .processInstanceId(instance.id).list()
-
-        incidents.size() != 0
+        then: 'user task created'
+        assertThat(task()).hasName("Handle exception")
     }
 }

@@ -10,7 +10,6 @@ import io.digital.patterns.workflow.data.FormDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.delegate.BpmnError;
 import org.camunda.bpm.engine.runtime.Execution;
 import org.camunda.spin.json.SpinJsonNode;
@@ -18,6 +17,7 @@ import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
 
 import javax.activation.DataHandler;
@@ -28,6 +28,8 @@ import javax.mail.util.ByteArrayDataSource;
 import javax.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -45,7 +47,7 @@ public class PdfService {
     private final RestTemplate restTemplate;
 
     public PdfService(AmazonS3 amazonS3, AmazonSimpleEmailService amazonSimpleEmailService,
-                     Environment environment, RestTemplate restTemplate) {
+                      Environment environment, RestTemplate restTemplate) {
         this.amazonS3 = amazonS3;
         this.amazonSimpleEmailService = amazonSimpleEmailService;
         this.environment = environment;
@@ -93,7 +95,7 @@ public class PdfService {
         JSONObject formAsJson = new JSONObject(form.toString());
 
         String bucket = environment.getProperty("aws.s3.formData")
-                + Optional.ofNullable(product).map( i -> "-" + i).orElse("");
+                + Optional.ofNullable(product).map(i -> "-" + i).orElse("");
         String formApiUrl = environment.getProperty("formApi.url");
         String formName = formAsJson.getString("name");
 
@@ -110,11 +112,11 @@ public class PdfService {
                         StandardCharsets.UTF_8.toString());
                 payload.put("submission", new JSONObject().put("data", new JSONObject(asJsonString)));
             } else {
-                payload.put("submission",  new JSONObject().put("data", new JSONObject(formData.toString())));
+                payload.put("submission", new JSONObject().put("data", new JSONObject(formData.toString())));
             }
 
             payload.put("webhookUrl", format("%s%s/webhook/process-instance/%s/message/%s?variableName=%s"
-                  ,environment.getProperty("engine.webhook.url"), environment.getProperty("server.servlet.context-path"),
+                    , environment.getProperty("engine.webhook.url"), environment.getProperty("server.servlet.context-path"),
                     execution.getProcessInstanceId(), message,
                     formName));
             payload.put("formUrl", format("%s/form/version/%s", formApiUrl, formAsJson.getString("formVersionId")));
@@ -142,14 +144,14 @@ public class PdfService {
 
             )).toString();
             log.error("Failed to send PDF '{}'", e.getMessage());
-            throw new BpmnError("FAILED_TO_REQUEST_PDF_GENERATION",configuration, e);
+            throw new BpmnError("FAILED_TO_REQUEST_PDF_GENERATION", configuration, e);
         }
 
     }
 
 
     public void sendPDFs(String senderAddress, List<String> recipients, String body, String subject,
-                         List<String> attachmentIds, Execution execution) {
+                         List<String> attachmentIds) {
 
 
         if (recipients.isEmpty()) {
@@ -167,15 +169,15 @@ public class PdfService {
             mimeMessage.setSubject(subject, "UTF-8");
             mimeMessage.setFrom(senderAddress);
             mimeMessage.setRecipients(Message.RecipientType.TO, filteredRecipients.stream()
-            .map(recipient -> {
-                Address address = null;
-                try {
-                    address = new InternetAddress(recipient);
-                } catch (AddressException e) {
-                    log.error("Failed to resolve to address {} {}", recipient, e.getMessage());
-                }
-                return address;
-            }).toArray(Address[]::new));
+                    .map(recipient -> {
+                        Address address = null;
+                        try {
+                            address = new InternetAddress(recipient);
+                        } catch (AddressException e) {
+                            log.error("Failed to resolve to address {} {}", recipient, e.getMessage());
+                        }
+                        return address;
+                    }).toArray(Address[]::new));
 
             MimeMultipart mp = new MimeMultipart();
             BodyPart part = new MimeBodyPart();
@@ -183,15 +185,24 @@ public class PdfService {
             mp.addBodyPart(part);
 
             attachmentIds.forEach(id -> {
-                S3Object object = amazonS3.getObject(environment.getProperty("aws.s3.pdfs"), id);
                 try {
                     MimeBodyPart attachment = new MimeBodyPart();
-                    DataSource dataSource = new ByteArrayDataSource(object.getObjectContent(), "application/pdf");
+                    DataSource dataSource;
+                    if (!new URI(id).isAbsolute()) {
+                        S3Object object = amazonS3.getObject(environment.getProperty("aws.s3.pdfs"), id);
+                        dataSource = new ByteArrayDataSource(object.getObjectContent(), "application/pdf");
+                    } else {
+                        dataSource = restTemplate.execute(id, HttpMethod.GET, null,
+                                (ResponseExtractor<DataSource>) response ->
+                                        new ByteArrayDataSource(response.getBody(), "application/pdf"));
+
+                    }
                     attachment.setDataHandler(new DataHandler(dataSource));
                     attachment.setFileName(id);
                     attachment.setHeader("Content-ID", "<" + UUID.randomUUID().toString() + ">");
+
                     mp.addBodyPart(attachment);
-                } catch (IOException | MessagingException e) {
+                } catch (IOException | MessagingException | URISyntaxException e) {
                     log.error("Failed to get data from S3 {}", e.getMessage());
                 }
             });

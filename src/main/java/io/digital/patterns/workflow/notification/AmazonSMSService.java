@@ -4,6 +4,7 @@ import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.delegate.BpmnError;
 import org.json.JSONObject;
@@ -17,38 +18,26 @@ public class AmazonSMSService {
     public static String SMS_FAILURE = "SMS_FAILURE";
 
     private final AmazonSNSClient amazonSNSClient;
-    private final RuntimeService runtimeService;
 
-    public AmazonSMSService(AmazonSNSClient amazonSNSClient, RuntimeService runtimeService) {
+    public AmazonSMSService(AmazonSNSClient amazonSNSClient) {
         this.amazonSNSClient = amazonSNSClient;
-        this.runtimeService = runtimeService;
     }
 
-    public String sendSMS(String phoneNumber, String message, String executionId) {
+    public String sendSMS(String phoneNumber, String message) {
+        log.info("Sending SMS message to {}", phoneNumber);
         try {
-            Assert.notNull(phoneNumber, "Phone number cannot be null");
-            Assert.notNull(message, "Message cannot be null");
-            Assert.notNull(executionId, "Execution id cannot be null");
+            Assert.isTrue(StringUtils.isNotBlank(phoneNumber), "Phone number cannot be null or empty");
+            Assert.isTrue(StringUtils.isNotBlank(message), "Message cannot be null or empty");
 
             PublishResult result = amazonSNSClient.publish(new PublishRequest()
                     .withMessage(message)
                     .withPhoneNumber(phoneNumber)
             );
-            log.info("SMS result '{}'", result.getMessageId());
+            log.info("SMS result '{}' for sending message to '{}'", result.getMessageId(), phoneNumber);
             return result.getMessageId();
         } catch (Exception e) {
-            log.error("Failed to send SMS", e);
-            JSONObject object = new JSONObject();
-            object.put("phoneNumber", phoneNumber);
-            object.put("exception", e.getMessage());
-            object.put("executionId", executionId);
-            try {
-                runtimeService.createIncident(SMS_FAILURE,
-                        executionId, object.toString());
-            } catch (Exception ex) {
-                log.error("Failed to create incident '{}'", ex.getMessage());
-            }
-           throw new BpmnError(SMS_FAILURE, e.getMessage(), e);
+            log.error("Failed to send SMS for '{}'", phoneNumber, e);
+            throw new BpmnError(SMS_FAILURE, e.getMessage(), e);
         }
     }
 }

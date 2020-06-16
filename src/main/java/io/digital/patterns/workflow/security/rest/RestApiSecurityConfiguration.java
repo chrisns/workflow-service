@@ -7,6 +7,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
@@ -15,7 +16,7 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Res
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
+import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 
 
 @Configuration
@@ -30,10 +31,14 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
     private static final String ACTUATOR_METRICS = "/actuator/metrics";
     private final RestApiSecurityConfigurationProperties configProps;
     private final IdentityService identityService;
+    private final RedisConnectionFactory redisConnectionFactory;
 
-    public RestApiSecurityConfiguration(RestApiSecurityConfigurationProperties configProps, IdentityService identityService) {
+    public RestApiSecurityConfiguration(RestApiSecurityConfigurationProperties configProps,
+                                        IdentityService identityService,
+                                        RedisConnectionFactory redisConnectionFactory) {
         this.configProps = configProps;
         this.identityService = identityService;
+        this.redisConnectionFactory = redisConnectionFactory;
     }
 
 
@@ -59,12 +64,6 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
                 .resourceId(configProps.getRequiredAudience());
     }
 
-    @Bean
-    public TokenStore tokenStore() {
-        return new JwkTokenStore(configProps.getJwkSetUrl());
-    }
-
-
     public ResourceServerTokenServices tokenServices() {
         DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
         defaultTokenServices.setTokenStore(tokenStore());
@@ -81,4 +80,9 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
         return filterRegistration;
     }
 
+
+    @Bean
+    public TokenStore tokenStore() {
+        return new RedisTokenStore(redisConnectionFactory);
+    }
 }

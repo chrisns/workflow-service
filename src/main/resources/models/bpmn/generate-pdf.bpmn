@@ -160,7 +160,7 @@
       </bpmn:extensionElements>
       <bpmn:outgoing>SequenceFlow_0pxxy0p</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:serviceTask id="sendpdfs" name="Send PDF" camunda:asyncBefore="true" camunda:expression="${pdfService.sendPDFs(senderAddress, recipients, body, subject, attachmentIds, execution)}">
+    <bpmn:serviceTask id="sendpdfs" name="Send PDF" camunda:asyncBefore="true" camunda:expression="${pdfService.sendPDFs(senderAddress, recipients, body, subject, attachmentIds)}">
       <bpmn:extensionElements>
         <camunda:inputOutput>
           <camunda:inputParameter name="senderAddress">${environment.getProperty('ses.from.address')}</camunda:inputParameter>

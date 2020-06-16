@@ -6,7 +6,9 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
+import com.amazonaws.services.s3.model.PutObjectResult
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
+import com.amazonaws.services.simpleemail.model.SendRawEmailResult
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
@@ -209,5 +211,33 @@ class PdfServiceSpec extends Specification {
 
         then: 'user task created'
         assertThat(task()).hasName('Investigate issue')
+    }
+
+    def 'can send pdf for absolute urls'() {
+        given: 'a endpoint that serves the pdf file'
+        wireMockStub.stub {
+            request {
+                method 'GET'
+                url '/myfiles/pdf/test.pdf'
+            }
+            response {
+                status: 200
+                headers {
+                    "Content-Type" "application/octet-stream"
+                }
+            }
+        }
+
+        when: 'a request to send pdf attachments for urls is made'
+        pdfService.sendPDFs('from@from.com', ['to@to.com'], 'body', 'subject', [
+                'http://localhost:8000/myfiles/pdf/test.pdf'
+        ])
+
+        then: 'email service to be called with attachments'
+        1 * amazonSimpleEmailService.sendRawEmail(_) >> {
+            def result = Mock(SendRawEmailResult)
+            result.getMessageId() >> 'messageId'
+            return result
+        }
     }
 }

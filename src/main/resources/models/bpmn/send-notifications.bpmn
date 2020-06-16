@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0tpithz" targetNamespace="Support task" exporter="Camunda Modeler" exporterVersion="3.7.1">
+  <bpmn:collaboration id="Collaboration_0vkjzw7">
+    <bpmn:participant id="Participant_0rvftts" name="Send Notification" processRef="send-notification" />
+    <bpmn:participant id="Participant_086vbsd" name="AWS SES" />
+    <bpmn:messageFlow id="MessageFlow_1xo8wra" sourceRef="sendSES" targetRef="Participant_086vbsd" />
+  </bpmn:collaboration>
+  <bpmn:process id="send-notification" name="Send Notification" isExecutable="true" camunda:isStartableInTasklist="false">
+    <bpmn:startEvent id="start" name="Notification request submitted" camunda:asyncBefore="true">
+      <bpmn:outgoing>Flow_09cfs6u</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_09cfs6u" sourceRef="start" targetRef="Gateway_06c3hvb" />
+    <bpmn:inclusiveGateway id="Gateway_06c3hvb">
+      <bpmn:incoming>Flow_09cfs6u</bpmn:incoming>
+      <bpmn:outgoing>Flow_0duhbem</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0t6eifh</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0duhbem" sourceRef="Gateway_06c3hvb" targetRef="sendSES">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${S(notificationPayload).hasProp('email') == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1lvdla0" sourceRef="sendSES" targetRef="Gateway_1dteb2l" />
+    <bpmn:sequenceFlow id="Flow_0oe1m0x" sourceRef="Gateway_1dteb2l" targetRef="EndEvent_11l4d1r" />
+    <bpmn:serviceTask id="sendSES" name="Send Email" camunda:expression="${pdfService.sendPDFs(senderAddress, recipients, body, subject, attachmentIds)}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="senderAddress">${environment.getProperty('ses.from.address')}</camunda:inputParameter>
+          <camunda:inputParameter name="body">
+            <camunda:script scriptFormat="groovy">def notificationPayload = execution.getVariable("notificationPayload");
+
+
+def messageBody = notificationPayload.prop('email').hasProp('body') ? notificationPayload.prop('email').prop('body').stringValue : null;
+
+if (messageBody == null) {
+  messageBody =  """&lt;html&gt;
+                            &lt;head&gt;
+                            &lt;/head&gt;
+                            &lt;body&gt;
+                            &lt;p&gt;Dear ${initiatedBy}&lt;/p&gt;
+
+                            &lt;h2&gt;Notification for ${S(notificationPayload).prop('businessKey').stringValue()} generated&lt;/h2&gt;
+
+
+                            &lt;p&gt;Kind regards&lt;/p&gt;
+                            &lt;p&gt;eForms&lt;/p&gt;
+                            &lt;/body&gt;
+                            &lt;/html&gt;"""
+ }
+messageBody;</camunda:script>
+          </camunda:inputParameter>
+          <camunda:inputParameter name="subject">
+            <camunda:script scriptFormat="groovy">def notificationPayload = execution.getVariable("notificationPayload");
+
+
+def messageSubject = notificationPayload.prop('email').hasProp('subject') ? notificationPayload.prop('email').prop('subject').stringValue : null;
+
+if (messageSubject == null) {
+  messageSubject = "Notification for ${S(notificationPayload).prop('businessKey').stringValue()}"
+ }
+messageSubject;</camunda:script>
+          </camunda:inputParameter>
+          <camunda:inputParameter name="attachmentIds">
+            <camunda:script scriptFormat="Groovy">def notificationPayload = execution.getVariable("notificationPayload");
+
+
+def attachmentIds = new ArrayList();
+
+if (notificationPayload.prop("email").hasProp("attachmentUrls")) {
+ 
+ notificationPayload.prop("email").prop("attachmentUrls").elements().each {
+   it -&gt; attachmentIds.add(it.stringValue());
+ }
+
+} 
+
+
+attachmentIds;</camunda:script>
+          </camunda:inputParameter>
+          <camunda:inputParameter name="recipients">
+            <camunda:script scriptFormat="Groovy">def notificationPayload = execution.getVariable("notificationPayload");
+def initiatedBy = execution.getVariable("initiatedBy");
+
+
+def recipients = new ArrayList();
+
+if (notificationPayload.prop("email").hasProp("recipients")) {
+ 
+ notificationPayload.prop("email").prop("recipients").elements().each {
+   it -&gt; recipients.add(it.stringValue());
+ } 
+}  else {
+ recipients.add(initiatedBy);
+}
+
+
+recipients;</camunda:script>
+          </camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_16b97d6</bpmn:incoming>
+      <bpmn:incoming>Flow_0duhbem</bpmn:incoming>
+      <bpmn:outgoing>Flow_1lvdla0</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Activity_0as772s" name="Investigate SES send failure ${sesFailureCode}" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}">
+      <bpmn:documentation>Failed to send email via SES due to ${sesFailureCode} with underlying exception ${sesFailureMessage}</bpmn:documentation>
+      <bpmn:incoming>Flow_13nq98w</bpmn:incoming>
+      <bpmn:outgoing>Flow_16b97d6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="Event_0hi4bgp" name="FAILED_TO_SEND_SES" attachedToRef="sendSES">
+      <bpmn:outgoing>Flow_13nq98w</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0ch5lfu" errorRef="Error_03mtyem" camunda:errorCodeVariable="sesFailureCode" camunda:errorMessageVariable="sesFailureMessage" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_16b97d6" sourceRef="Activity_0as772s" targetRef="sendSES" />
+    <bpmn:sequenceFlow id="Flow_13nq98w" sourceRef="Event_0hi4bgp" targetRef="Activity_0as772s" />
+    <bpmn:subProcess id="sendSMSs">
+      <bpmn:incoming>Flow_0t6eifh</bpmn:incoming>
+      <bpmn:outgoing>Flow_190ulkf</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${phoneNumbers}" camunda:elementVariable="phoneNumber" />
+      <bpmn:startEvent id="Event_0ywle2u">
+        <bpmn:outgoing>Flow_075f62j</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="sendSMS" name="Send SMS" camunda:expression="${amazonSMSService.sendSMS(phoneNumber, message)}">
+        <bpmn:extensionElements>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="message">${S(notificationPayload).prop("sms").prop("message").stringValue()}</camunda:inputParameter>
+          </camunda:inputOutput>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_11zym06</bpmn:incoming>
+        <bpmn:incoming>Flow_075f62j</bpmn:incoming>
+        <bpmn:outgoing>Flow_18so5ti</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:boundaryEvent id="Event_0dii9s6" name="SMS_FAILURE" attachedToRef="sendSMS">
+        <bpmn:outgoing>Flow_0xfskv2</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorEventDefinition_17t1eap" errorRef="Error_1jp51nb" camunda:errorCodeVariable="snsFailureCode" camunda:errorMessageVariable="snsFailureMessage" />
+      </bpmn:boundaryEvent>
+      <bpmn:userTask id="Activity_17jorw6" name="Investigate SNS failure ${snsFailureCode}" camunda:candidateGroups="process_admin" camunda:dueDate="${now()}">
+        <bpmn:documentation>Failed to send SMS via SNS due to ${snsFailureCode} with underlying exception ${snsFailureMessage}</bpmn:documentation>
+        <bpmn:incoming>Flow_0xfskv2</bpmn:incoming>
+        <bpmn:outgoing>Flow_11zym06</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:sequenceFlow id="Flow_11zym06" sourceRef="Activity_17jorw6" targetRef="sendSMS" />
+      <bpmn:sequenceFlow id="Flow_0xfskv2" sourceRef="Event_0dii9s6" targetRef="Activity_17jorw6" />
+      <bpmn:sequenceFlow id="Flow_075f62j" sourceRef="Event_0ywle2u" targetRef="sendSMS" />
+      <bpmn:endEvent id="Event_0c4an4i">
+        <bpmn:incoming>Flow_18so5ti</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_18so5ti" sourceRef="sendSMS" targetRef="Event_0c4an4i" />
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="Flow_0t6eifh" sourceRef="Gateway_06c3hvb" targetRef="sendSMSs">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="take">
+          <camunda:script scriptFormat="Groovy">
+def notificationPayload  = execution.getVariable("notificationPayload");
+
+def numbers = new ArrayList();
+
+notificationPayload.prop('sms').prop('phoneNumbers').elements().each {
+  it -&gt; numbers.add(it.stringValue());
+}
+execution.setVariable('phoneNumbers' ,numbers);
+</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${S(notificationPayload).hasProp('sms') == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_190ulkf" sourceRef="sendSMSs" targetRef="Gateway_1dteb2l" />
+    <bpmn:inclusiveGateway id="Gateway_1dteb2l">
+      <bpmn:incoming>Flow_1lvdla0</bpmn:incoming>
+      <bpmn:incoming>Flow_190ulkf</bpmn:incoming>
+      <bpmn:outgoing>Flow_0oe1m0x</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:endEvent id="EndEvent_11l4d1r" name="Notifications sent">
+      <bpmn:incoming>Flow_0oe1m0x</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+  <bpmn:message id="Message_11n8ws1" name="pdfGenerated_${S(form).prop(&#39;name&#39;).stringValue()}_${S(form).prop(&#39;submissionDate&#39;).stringValue()}" />
+  <bpmn:error id="Error_021xlvi" name="FAILED_TO_REQUEST_PDF_GENERATION" />
+  <bpmn:error id="Error_03mtyem" name="FAILED_TO_SEND_SES" />
+  <bpmn:error id="Error_1jp51nb" name="SMS_FAILURE" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0vkjzw7">
+      <bpmndi:BPMNShape id="Participant_0rvftts_di" bpmnElement="Participant_0rvftts" isHorizontal="true">
+        <dc:Bounds x="129" y="80" width="1461" height="780" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_190ulkf_di" bpmnElement="Flow_190ulkf">
+        <di:waypoint x="960" y="240" />
+        <di:waypoint x="1220" y="240" />
+        <di:waypoint x="1220" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0t6eifh_di" bpmnElement="Flow_0t6eifh">
+        <di:waypoint x="340" y="285" />
+        <di:waypoint x="340" y="250" />
+        <di:waypoint x="390" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13nq98w_di" bpmnElement="Flow_13nq98w">
+        <di:waypoint x="610" y="558" />
+        <di:waypoint x="610" y="610" />
+        <di:waypoint x="690" y="610" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16b97d6_di" bpmnElement="Flow_16b97d6">
+        <di:waypoint x="740" y="650" />
+        <di:waypoint x="740" y="690" />
+        <di:waypoint x="520" y="690" />
+        <di:waypoint x="520" y="540" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0oe1m0x_di" bpmnElement="Flow_0oe1m0x">
+        <di:waypoint x="1245" y="320" />
+        <di:waypoint x="1352" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1lvdla0_di" bpmnElement="Flow_1lvdla0">
+        <di:waypoint x="610" y="500" />
+        <di:waypoint x="1220" y="500" />
+        <di:waypoint x="1220" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0duhbem_di" bpmnElement="Flow_0duhbem">
+        <di:waypoint x="340" y="335" />
+        <di:waypoint x="340" y="500" />
+        <di:waypoint x="510" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09cfs6u_di" bpmnElement="Flow_09cfs6u">
+        <di:waypoint x="238" y="310" />
+        <di:waypoint x="315" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="start">
+        <dc:Bounds x="202" y="292" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="176" y="335" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1b51otx_di" bpmnElement="Gateway_06c3hvb">
+        <dc:Bounds x="315" y="285" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0pdcb4o_di" bpmnElement="sendSES">
+        <dc:Bounds x="510" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_039zo40_di" bpmnElement="Activity_0as772s">
+        <dc:Bounds x="690" y="570" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0qxnhj9_di" bpmnElement="sendSMSs" isExpanded="true">
+        <dc:Bounds x="390" y="110" width="570" height="320" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_18so5ti_di" bpmnElement="Flow_18so5ti">
+        <di:waypoint x="640" y="230" />
+        <di:waypoint x="882" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_075f62j_di" bpmnElement="Flow_075f62j">
+        <di:waypoint x="458" y="230" />
+        <di:waypoint x="540" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xfskv2_di" bpmnElement="Flow_0xfskv2">
+        <di:waypoint x="640" y="288" />
+        <di:waypoint x="640" y="320" />
+        <di:waypoint x="750" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11zym06_di" bpmnElement="Flow_11zym06">
+        <di:waypoint x="800" y="360" />
+        <di:waypoint x="800" y="380" />
+        <di:waypoint x="590" y="380" />
+        <di:waypoint x="590" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_0ywle2u_di" bpmnElement="Event_0ywle2u">
+        <dc:Bounds x="422" y="212" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1ydl9dj_di" bpmnElement="sendSMS">
+        <dc:Bounds x="540" y="190" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_056kb5m_di" bpmnElement="Activity_17jorw6">
+        <dc:Bounds x="750" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0c4an4i_di" bpmnElement="Event_0c4an4i">
+        <dc:Bounds x="882" y="212" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0686d1q_di" bpmnElement="Event_0dii9s6">
+        <dc:Bounds x="622" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="652" y="293" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0bcnjv2_di" bpmnElement="Gateway_1dteb2l">
+        <dc:Bounds x="1195" y="295" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_11l4d1r_di" bpmnElement="EndEvent_11l4d1r">
+        <dc:Bounds x="1352" y="302" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1331" y="345" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0r0naoe_di" bpmnElement="Event_0hi4bgp">
+        <dc:Bounds x="592" y="522" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="638" y="526" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_1ykgvm4_di" bpmnElement="Participant_086vbsd" isHorizontal="true">
+        <dc:Bounds x="420" y="930" width="300" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="MessageFlow_1xo8wra_di" bpmnElement="MessageFlow_1xo8wra">
+        <di:waypoint x="560" y="540" />
+        <di:waypoint x="560" y="930" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
