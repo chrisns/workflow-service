@@ -14,7 +14,6 @@ import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.spin.Spin;
 import org.camunda.spin.json.SpinJsonNode;
 import org.joda.time.DateTime;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;

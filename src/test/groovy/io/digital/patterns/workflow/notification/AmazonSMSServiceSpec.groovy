@@ -13,12 +13,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.assertThat
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.execute
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.job
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.repositoryService
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.runtimeService
-import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.task
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
 import static org.camunda.spin.Spin.S
 
 class AmazonSMSServiceSpec extends Specification {

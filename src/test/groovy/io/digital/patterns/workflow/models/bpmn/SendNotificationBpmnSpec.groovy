@@ -6,8 +6,6 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.amazonaws.services.sns.AmazonSNSClient
-import com.github.tomakehurst.wiremock.junit.WireMockRule
-import com.github.tomjankes.wiremock.WireMockGroovy
 import io.digital.patterns.workflow.notification.AmazonSMSService
 import io.digital.patterns.workflow.pdf.PdfService
 import org.camunda.bpm.engine.runtime.ProcessInstance
@@ -20,13 +18,11 @@ import org.junit.Assert
 import org.junit.ClassRule
 import org.springframework.core.env.Environment
 import org.springframework.core.env.StandardEnvironment
-import org.springframework.core.io.ClassPathResource
 import org.springframework.web.client.RestTemplate
 import org.testcontainers.containers.localstack.LocalStackContainer
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
 import static org.camunda.spin.Spin.S
 

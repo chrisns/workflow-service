@@ -4,7 +4,6 @@ import io.digital.patterns.workflow.security.cockpit.KeycloakAuthenticationProvi
 import org.camunda.bpm.engine.IdentityService
 import org.camunda.bpm.engine.ProcessEngine
 import org.camunda.bpm.engine.identity.GroupQuery
-import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import spock.lang.Specification
