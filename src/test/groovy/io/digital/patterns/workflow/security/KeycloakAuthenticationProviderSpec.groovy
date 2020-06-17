@@ -6,8 +6,7 @@ import org.camunda.bpm.engine.ProcessEngine
 import org.camunda.bpm.engine.identity.GroupQuery
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.provider.OAuth2Authentication
-import org.springframework.security.oauth2.provider.OAuth2Request
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import spock.lang.Specification
 
 import javax.servlet.http.HttpServletRequest
@@ -30,17 +29,16 @@ class KeycloakAuthenticationProviderSpec extends Specification {
     def 'can extract authenticated user'() {
         given: 'a request'
         HttpServletRequest request = Mock()
-        OAuth2Request oAuth2Request= Mock()
+        OAuth2AuthenticationToken token= Mock()
         GroupQuery query =Mock()
         processEngine.getIdentityService() >> identityService
         identityService.createGroupQuery() >> query
         query.groupMember(_) >> query
         query.list() >> []
 
-        def token = new TestingAuthenticationToken('test', 'test')
-        def details = ['email': 'email']
-        token.setDetails(details)
-        SecurityContextHolder.getContext().setAuthentication(new OAuth2Authentication(oAuth2Request, token))
+        token.getDetails() >> new Object()
+        token.getName() >> 'Name'
+        SecurityContextHolder.getContext().setAuthentication(token)
 
         when: 'attempt to extract user is made'
         def result = underTest.extractAuthenticatedUser(request, processEngine)
@@ -53,12 +51,8 @@ class KeycloakAuthenticationProviderSpec extends Specification {
     def 'returns unauthenticated'() {
         given: 'a request'
         HttpServletRequest request = Mock()
-        OAuth2Request oAuth2Request= Mock()
-
-        def token = new TestingAuthenticationToken('test', 'test')
-        def details = ['x': 'x']
-        token.setDetails(details)
-        SecurityContextHolder.getContext().setAuthentication(new OAuth2Authentication(oAuth2Request, token))
+        OAuth2AuthenticationToken token= Mock()
+        SecurityContextHolder.getContext().setAuthentication(token)
 
         when: 'attempt to extract user is made'
         def result = underTest.extractAuthenticatedUser(request, processEngine)
@@ -71,9 +65,8 @@ class KeycloakAuthenticationProviderSpec extends Specification {
     def 'returns unauthenticated if security context is null'() {
         given: 'a request'
         HttpServletRequest request = Mock()
-        OAuth2Request oAuth2Request= Mock()
 
-        SecurityContextHolder.getContext().setAuthentication(new OAuth2Authentication(oAuth2Request, null))
+        SecurityContextHolder.getContext().setAuthentication(null)
 
         when: 'attempt to extract user is made'
         def result = underTest.extractAuthenticatedUser(request, processEngine)

@@ -3,27 +3,33 @@ package io.digital.patterns.workflow.security.cockpit;
 
 import org.camunda.bpm.webapp.impl.security.auth.ContainerBasedAuthenticationFilter;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.session.data.redis.config.ConfigureRedisAction;
 import org.springframework.web.context.request.RequestContextListener;
 
 import java.util.Collections;
 
+
 @Configuration
-@EnableOAuth2Sso
+@EnableWebSecurity
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 10)
 public class WebAppSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private final KeycloakLogoutHandler keycloakLogoutHandler;
 
-    public WebAppSecurityConfiguration(KeycloakLogoutHandler keycloakLogoutHandler) {
+    private final JwtDecoder jwtDecoder;
+
+    public WebAppSecurityConfiguration(KeycloakLogoutHandler keycloakLogoutHandler, JwtDecoder jwtDecoder) {
         this.keycloakLogoutHandler = keycloakLogoutHandler;
+        this.jwtDecoder = jwtDecoder;
     }
 
     @Override
@@ -41,12 +47,14 @@ public class WebAppSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and()
                 .logout()
                 .logoutRequestMatcher(new AntPathRequestMatcher("/app/**/logout"))
-                .logoutSuccessHandler(keycloakLogoutHandler);
+                .logoutSuccessHandler(keycloakLogoutHandler)
+                .and()
+                .oauth2Login().userInfoEndpoint().oidcUserService(new KeycloakOauth2UserService(jwtDecoder));
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Bean
-    public FilterRegistrationBean containerBasedAuthenticationFilter(){
+    public FilterRegistrationBean containerBasedAuthenticationFilter() {
 
         FilterRegistrationBean filterRegistration = new FilterRegistrationBean();
         filterRegistration.setFilter(new ContainerBasedAuthenticationFilter());
@@ -63,5 +71,9 @@ public class WebAppSecurityConfiguration extends WebSecurityConfigurerAdapter {
         return new RequestContextListener();
     }
 
+    @Bean
+    public static ConfigureRedisAction configureRedisAction() {
+        return ConfigureRedisAction.NO_OP;
+    }
 
 }

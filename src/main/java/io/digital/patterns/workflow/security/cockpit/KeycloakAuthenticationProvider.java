@@ -4,13 +4,11 @@ import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.identity.Group;
 import org.camunda.bpm.engine.rest.security.auth.AuthenticationResult;
 import org.camunda.bpm.engine.rest.security.auth.impl.ContainerBasedAuthenticationProvider;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,18 +17,17 @@ public class KeycloakAuthenticationProvider extends ContainerBasedAuthentication
     @Override
     public AuthenticationResult extractAuthenticatedUser(HttpServletRequest request, ProcessEngine engine) {
 
-        OAuth2Authentication authentication = (OAuth2Authentication) SecurityContextHolder.getContext().getAuthentication();
+        OAuth2AuthenticationToken authentication = (OAuth2AuthenticationToken) SecurityContextHolder.getContext()
+                .getAuthentication();
         if (authentication == null) {
             return AuthenticationResult.unsuccessful();
         }
-        Authentication userAuthentication = authentication.getUserAuthentication();
-        if (userAuthentication == null || userAuthentication.getDetails() == null) {
+        if ( authentication.getDetails() == null) {
             return AuthenticationResult.unsuccessful();
         }
 
         @SuppressWarnings("unchecked")
-
-        String userId = ((HashMap<String, String>) userAuthentication.getDetails()).get("email");
+        String userId = authentication.getName();
         if (StringUtils.isEmpty(userId)) {
             return AuthenticationResult.unsuccessful();
         }

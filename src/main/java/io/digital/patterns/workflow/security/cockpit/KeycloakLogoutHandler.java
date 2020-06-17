@@ -19,14 +19,14 @@ import java.io.IOException;
 @Slf4j
 public class KeycloakLogoutHandler implements LogoutSuccessHandler {
 
-
     private RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 
     private String oauth2UserLogoutUri;
 
-    public KeycloakLogoutHandler(@Value("${security.oauth2.client.user-authorization-uri:}") String oauth2UserAuthorizationUri) {
+    public KeycloakLogoutHandler(@Value("${spring.security.oauth2.client.provider.keycloak.authorization-uri:}")
+                                         String oauth2UserAuthorizationUri) {
         if (!StringUtils.isEmpty(oauth2UserAuthorizationUri)) {
-             this.oauth2UserLogoutUri = oauth2UserAuthorizationUri.replace("openid-connect/auth", "openid-connect/logout");
+            this.oauth2UserLogoutUri = oauth2UserAuthorizationUri.replace("openid-connect/auth", "openid-connect/logout");
         }
     }
 
@@ -35,7 +35,7 @@ public class KeycloakLogoutHandler implements LogoutSuccessHandler {
             throws IOException, ServletException {
         if (!StringUtils.isEmpty(oauth2UserLogoutUri)) {
             String requestUrl = request.getRequestURL().toString();
-            String redirectUri = requestUrl.substring(0, requestUrl.indexOf("/app")) + "/login";
+            String redirectUri = requestUrl.substring(0, requestUrl.indexOf("/app"));
 
             String logoutUrl = oauth2UserLogoutUri + "?redirect_uri=" + redirectUri;
             log.debug("Redirecting to logout URL {}", logoutUrl);

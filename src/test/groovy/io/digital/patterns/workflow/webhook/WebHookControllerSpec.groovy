@@ -3,6 +3,7 @@ package io.digital.patterns.workflow.webhook
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.digital.patterns.workflow.security.cockpit.KeycloakLogoutHandler
 import org.camunda.bpm.engine.HistoryService
+import org.camunda.bpm.engine.IdentityService
 import org.camunda.bpm.engine.RepositoryService
 import org.camunda.bpm.engine.RuntimeService
 import org.camunda.bpm.engine.test.ProcessEngineRule
@@ -14,12 +15,12 @@ import org.camunda.spin.json.SpinJsonNode
 import org.junit.ClassRule
 import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -73,9 +74,14 @@ class WebHookControllerSpec extends Specification {
     @SpringBean
     private KeycloakLogoutHandler keycloakLogoutHandler = Mock()
 
+    @SpringBean
+    private IdentityService identityService = engineRule.getIdentityService()
 
     @SpringBean
-    ResourceServerProperties resourceServerProperties = Mock()
+    private ClientRegistrationRepository clientRegistrationRepository = Mock()
+
+    @SpringBean
+    private JwtDecoder jwtDecoder = Mock()
 
     def setup() {
         mvc = MockMvcBuilders

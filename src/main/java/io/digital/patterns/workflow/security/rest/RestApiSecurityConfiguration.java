@@ -1,44 +1,44 @@
 package io.digital.patterns.workflow.security.rest;
 
 import org.camunda.bpm.engine.IdentityService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
-import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 
 @Configuration
-@EnableResourceServer
 @EnableWebSecurity
-@Order(SecurityProperties.BASIC_AUTH_ORDER - 20)
+@Order(SecurityProperties.BASIC_AUTH_ORDER - 25)
 @ConditionalOnProperty(name = "rest.security.enabled", havingValue = "true", matchIfMissing = true)
-public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapter {
+public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private static final String ENGINE = "/engine";
     private static final String ACTUATOR_HEALTH = "/actuator/health";
     private static final String ACTUATOR_METRICS = "/actuator/metrics";
-    private final RestApiSecurityConfigurationProperties configProps;
     private final IdentityService identityService;
-    private final RedisConnectionFactory redisConnectionFactory;
+    private final KeycloakAuthenticationConverter keycloakAuthenticationConverter;
 
-    public RestApiSecurityConfiguration(RestApiSecurityConfigurationProperties configProps,
-                                        IdentityService identityService,
-                                        RedisConnectionFactory redisConnectionFactory) {
-        this.configProps = configProps;
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuer;
+
+    public RestApiSecurityConfiguration(IdentityService identityService,
+                                        KeycloakAuthenticationConverter keycloakAuthenticationConverter) {
         this.identityService = identityService;
-        this.redisConnectionFactory = redisConnectionFactory;
+        this.keycloakAuthenticationConverter = keycloakAuthenticationConverter;
     }
 
 
@@ -53,22 +53,15 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
                 .antMatchers(ACTUATOR_HEALTH).permitAll()
                 .antMatchers(ACTUATOR_METRICS).permitAll()
                 .anyRequest()
-                .authenticated();
+                .authenticated()
+                .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().oauth2ResourceServer()
+                .jwt()
+                .jwtAuthenticationConverter(keycloakAuthenticationConverter);
     }
 
-
-    @Override
-    public void configure(final ResourceServerSecurityConfigurer config) {
-        config
-                .tokenServices(tokenServices())
-                .resourceId(configProps.getRequiredAudience());
-    }
-
-    public ResourceServerTokenServices tokenServices() {
-        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
-        defaultTokenServices.setTokenStore(tokenStore());
-        return defaultTokenServices;
-    }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Bean
@@ -80,9 +73,18 @@ public class RestApiSecurityConfiguration extends ResourceServerConfigurerAdapte
         return filterRegistration;
     }
 
-
     @Bean
-    public TokenStore tokenStore() {
-        return new RedisTokenStore(redisConnectionFactory);
+    public NimbusJwtDecoder jwtDecoder() {
+        NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder)
+                JwtDecoders.fromOidcIssuerLocation(issuer);
+
+        OAuth2TokenValidator<Jwt> audienceValidator = new AudienceValidator("camunda-rest-api");
+        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
+        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+
+        jwtDecoder.setJwtValidator(withAudience);
+
+        return jwtDecoder;
     }
+
 }

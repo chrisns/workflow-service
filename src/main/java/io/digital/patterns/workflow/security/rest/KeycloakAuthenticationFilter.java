@@ -3,12 +3,12 @@ package io.digital.patterns.workflow.security.rest;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.engine.identity.Group;
-import org.camunda.spin.Spin;
+
 import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.jwt.JwtHelper;
-import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import javax.servlet.*;
 import java.io.IOException;
@@ -28,11 +28,9 @@ public class KeycloakAuthenticationFilter implements Filter {
             throws IOException, ServletException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        OAuth2AuthenticationDetails details = (OAuth2AuthenticationDetails) authentication.getDetails();
-        String accessToken = details.getTokenValue();
-        String claims = JwtHelper.decode(accessToken).getClaims();
-
-        String userId = Spin.JSON(claims).prop("email").stringValue();
+        JwtAuthenticationToken details = (JwtAuthenticationToken) authentication;
+        Jwt jwt = details.getToken();
+        String userId =  jwt.getClaims().get("email").toString();
         log.debug("Extracted userId from bearer token: {}", userId);
 
         if (userId != null) {

@@ -1,12 +1,14 @@
 package io.digital.patterns.workflow.health
 
 import io.digital.patterns.workflow.security.cockpit.KeycloakLogoutHandler
+import org.camunda.bpm.engine.IdentityService
 import org.camunda.bpm.engine.ProcessEngineConfiguration
 import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
@@ -31,8 +33,13 @@ class HealthApiControllerSpec extends Specification{
     KeycloakLogoutHandler keycloakLogoutHandler = Mock()
 
     @SpringBean
-    ResourceServerProperties resourceServerProperties = Mock()
+    private IdentityService identityService = Mock()
 
+    @SpringBean
+    private JwtDecoder jwtDecoder = Mock()
+
+    @SpringBean
+    private ClientRegistrationRepository clientRegistrationRepository = Mock()
     def setup() {
         mvc = MockMvcBuilders
                 .webAppContextSetup(context)
