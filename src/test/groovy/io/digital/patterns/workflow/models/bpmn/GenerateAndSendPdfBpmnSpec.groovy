@@ -30,8 +30,8 @@ import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
 import static org.camunda.spin.Spin.S
 
-@Deployment(resources = ['./models/bpmn/generate-pdf.bpmn'])
-class GeneratePdfBpmnSpec extends Specification {
+@Deployment(resources = ['./models/bpmn/generate-and-send-pdf.bpmn'])
+class GenerateAndSendPdfBpmnSpec extends Specification {
 
     def static wmPort = 8000
 
