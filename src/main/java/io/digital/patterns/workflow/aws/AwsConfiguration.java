@@ -51,7 +51,7 @@ public class AwsConfiguration {
     @Bean
     public AmazonSNSClient amazonSNSClient() {
        return (AmazonSNSClient) AmazonSNSClient.builder()
-                .withRegion(Regions.fromName(awsProperties.getRegion()))
+                .withRegion(Regions.fromName(awsProperties.getSnsRegion()))
                 .withCredentials(credentials()).build();
 
     }

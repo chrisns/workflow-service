@@ -71,6 +71,7 @@ server:
 aws:
   region: ${AWS_REGION:eu-west-2}
   bucket-name: ${aws.s3.formData:}
+  sns-region: ${aws.sns.region:eu-west-1}
   credentials:
     access-key: ${AWS_ACCESS_KEY:}
     secret-Key: ${AWS_SECRET_KEY:}

@@ -86,6 +86,10 @@ dependencies {
     implementation 'org.springframework.security:spring-security-oauth2-resource-server:5.3.3.RELEASE'
     implementation 'org.springframework.security:spring-security-oauth2-jose:5.3.3.RELEASE'
 
+
+    implementation "org.springframework.boot:spring-boot-starter-websocket"
+    implementation "org.springframework.security:spring-security-messaging:5.3.3.RELEASE"
+
     implementation 'org.json:json:20190722'
     implementation 'javax.activation:javax.activation-api:1.2.0'
 
