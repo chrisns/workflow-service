@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
+import java.util.List;
+
 
 @Configuration
 @EnableWebSecurity
@@ -35,6 +37,9 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuer;
 
+    @Value("${camunda.bpmn.upload.roles:process_admin}")
+    private List<String> bpmnUploadRoles;
+
     public RestApiSecurityConfiguration(IdentityService identityService,
                                         KeycloakAuthenticationConverter keycloakAuthenticationConverter) {
         this.identityService = identityService;
@@ -49,6 +54,8 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and()
                 .antMatcher("/engine-rest/**")
                 .authorizeRequests()
+                .antMatchers("/engine-rest/deployment/create")
+                .hasAnyAuthority(bpmnUploadRoles.toArray(new String[]{}))
                 .antMatchers(ENGINE).permitAll()
                 .antMatchers(ACTUATOR_HEALTH).permitAll()
                 .antMatchers(ACTUATOR_METRICS).permitAll()

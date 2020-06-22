@@ -7,7 +7,7 @@
     <bpmn:messageFlow id="MessageFlow_1vj7blu" sourceRef="generatePdf" targetRef="Participant_0f95rek" />
     <bpmn:messageFlow id="MessageFlow_1xo8wra" sourceRef="sendpdfs" targetRef="Participant_086vbsd" />
   </bpmn:collaboration>
-  <bpmn:process id="generate-and-send-pdf" name="Generate PDF" isExecutable="true" camunda:isStartableInTasklist="false">
+  <bpmn:process id="generate-and-send-pdf" name="Generate and Send PDF" isExecutable="true" camunda:isStartableInTasklist="false">
     <bpmn:subProcess id="formsProcessing" name="For each form">
       <bpmn:extensionElements>
         <camunda:executionListener event="start">
