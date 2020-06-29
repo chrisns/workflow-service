@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0tpithz" targetNamespace="Support task" exporter="Camunda Modeler" exporterVersion="3.7.1">
   <bpmn:collaboration id="Collaboration_0vkjzw7">
-    <bpmn:participant id="Participant_0rvftts" name="Send Notification" processRef="send-notification" />
+    <bpmn:participant id="Participant_0rvftts" name="Send Notifications" processRef="send-notifications" />
     <bpmn:participant id="Participant_086vbsd" name="AWS SES" />
     <bpmn:messageFlow id="MessageFlow_1xo8wra" sourceRef="sendSES" targetRef="Participant_086vbsd" />
   </bpmn:collaboration>
-  <bpmn:process id="send-notification" name="Send Notification" isExecutable="true" camunda:isStartableInTasklist="false">
+  <bpmn:process id="send-notifications" name="Send Notifications" isExecutable="true" camunda:isStartableInTasklist="false">
     <bpmn:startEvent id="start" name="Notification request submitted" camunda:asyncBefore="true">
       <bpmn:outgoing>Flow_09cfs6u</bpmn:outgoing>
     </bpmn:startEvent>
@@ -28,7 +28,7 @@
             <camunda:script scriptFormat="groovy">def notificationPayload = execution.getVariable("notificationPayload");
 
 
-def messageBody = notificationPayload.prop('email').hasProp('body') ? notificationPayload.prop('email').prop('body').stringValue : null;
+def messageBody = notificationPayload.prop('email').hasProp('body') ? notificationPayload.prop('email').prop('body').stringValue() : null;
 
 if (messageBody == null) {
   messageBody =  """&lt;html&gt;
@@ -148,16 +148,14 @@ recipients;</camunda:script>
     <bpmn:sequenceFlow id="Flow_0t6eifh" sourceRef="Gateway_06c3hvb" targetRef="sendSMSs">
       <bpmn:extensionElements>
         <camunda:executionListener event="take">
-          <camunda:script scriptFormat="Groovy">
-def notificationPayload  = execution.getVariable("notificationPayload");
+          <camunda:script scriptFormat="Groovy">def notificationPayload  = execution.getVariable("notificationPayload");
 
 def numbers = new ArrayList();
 
 notificationPayload.prop('sms').prop('phoneNumbers').elements().each {
   it -&gt; numbers.add(it.stringValue());
 }
-execution.setVariable('phoneNumbers' ,numbers);
-</camunda:script>
+execution.setVariable('phoneNumbers' ,numbers);</camunda:script>
         </camunda:executionListener>
       </bpmn:extensionElements>
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${S(notificationPayload).hasProp('sms') == true}</bpmn:conditionExpression>
