@@ -10,6 +10,7 @@ import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
 import io.digital.patterns.workflow.pdf.PdfService
+import org.apache.groovy.util.Maps
 import org.camunda.bpm.engine.runtime.ProcessInstance
 import org.camunda.bpm.engine.test.Deployment
 import org.camunda.bpm.engine.test.ProcessEngineRule
@@ -28,6 +29,7 @@ import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
+import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
 import static org.camunda.spin.Spin.S
 
 @Deployment(resources = ['./models/bpmn/generate-and-send-pdf.bpmn'])
@@ -161,7 +163,6 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
         then: 'process instance should have passed generate pdf task'
         assertThat(instance).hasPassed('generatePdf')
     }
-
 
     def 'can receive message from pdf server'() {
         given: 'forms that a user has selected'
@@ -373,7 +374,7 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
         assertThat(instance).hasPassed('sendpdfs')
     }
 
-    def 'error handling scenario when fail to send pdf'() {
+    def 'User retries failed PDF sending task'() {
         given: 'forms that a user has selected'
         def generatePdf = S('''{
                             "businessKey" : "businessKey",
@@ -427,14 +428,18 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
 
         then: 'user support task created'
         Assert.assertThat(taskQuery().processInstanceId(instance.id).list().size(), Matchers.is(1))
-        assertThat(instance).isWaitingAt('sendpdfsFailure')
+        assertThat(instance).isWaitingAt('sesSendFailure')
 
+        when: 'User selects to retry sending PDF'
+        complete(task(), Maps.of('sesSendFailure', S('''
+                                                           {
+                                                             "retry" : true
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
 
-        when: 'issue is fixed'
         amazonS3.putObject(new PutObjectRequest("pdfs", "testPdfA.pdf",
                 new ClassPathResource("testPdf.pdf").getInputStream(), new ObjectMetadata()))
 
-        complete(task())
         execute(job())
 
         then: 'process is complete'
@@ -442,5 +447,130 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
 
     }
 
+    def 'User cancels sending PDF via SES after failure'() {
+        given: 'An email has failed to send'
+        def generatePdf = S('''{
+                            "businessKey" : "businessKey",
+                            "forms": [{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }]
+                           
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
 
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['generatePdf': generatePdf, 'initiatedBy': 'user', 'sesFailureCode': '22'])
+                .startBeforeActivity('sesSendFailure')
+                .execute()
+
+        when: 'Task is running with PDF created'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate SES send failure'
+
+        assertThat(task()).hasName("Investigate SES send failure 22")
+
+        then: 'User selects to cancel sending via SES'
+        complete(task(), Maps.of('sesSendFailure', S('''
+                                                           {
+                                                             "retry" : false
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'process is complete'
+        assertThat(processInstance).isEnded()
+
+    }
+
+    def 'User cancels retrying to create PDF after failure'() {
+        given: 'An email has failed to send'
+
+        def form = S('''{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['businessKey': 'businessKey', 'initiatedBy': 'user', 'form': form])
+                .startBeforeActivity('pdfFailureUserTask')
+                .execute()
+
+        when: 'A PDF has attempted to be created and failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate the PDF generation issue'
+
+        assertThat(task()).hasName("Investigate generate PDF for failure ${S(form).prop('name').stringValue()}")
+
+        then: 'User decides to not retry generating PDF'
+        complete(task(), Maps.of('investigateFormPDF', S('''
+                                                           {
+                                                             "retry" : false
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'Sub process is complete'
+        assertThat(processInstance).hasPassed('EndEvent_1mmwa26')
+
+    }
+
+    def 'User retries to create PDF after failure'() {
+        given: 'A PDF failed to be created'
+
+        def generatePdf = S('''{
+                            "businessKey" : "businessKey",
+                            "forms": [{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }]
+                            
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        def form = S('''{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['generatePdf': generatePdf, 'businessKey': 'businessKey', 'initiatedBy': 'user', 'form': form])
+                .startBeforeActivity('pdfFailureUserTask')
+                .execute()
+
+        when: 'A process is running but the PDF generation failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate the PDF generation issue'
+
+        assertThat(task()).hasName("Investigate generate PDF for failure ${S(form).prop('name').stringValue()}")
+
+        then: 'User decides to retry PDF generation'
+        complete(task(), Maps.of('investigateFormPDF', S('''
+                                                           {
+                                                             "retry" : true
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'PDF is retried'
+        assertThat(processInstance).hasPassed('generatePdf')
+
+    }
 }

@@ -12,6 +12,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
 import io.digital.patterns.workflow.notification.AmazonSMSService
 import io.digital.patterns.workflow.pdf.PdfService
+import org.apache.groovy.util.Maps
 import org.camunda.bpm.engine.runtime.ProcessInstance
 import org.camunda.bpm.engine.test.Deployment
 import org.camunda.bpm.engine.test.ProcessEngineRule
@@ -30,6 +31,8 @@ import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
+import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
+import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
 import static org.camunda.spin.Spin.S
 
 @Deployment(resources = ['./models/bpmn/send-notifications.bpmn'])
@@ -80,7 +83,6 @@ class SendNotificationBpmnSpec extends Specification {
         localstack.stop()
     }
 
-
     def setup() {
 
         restTemplate = new RestTemplate()
@@ -121,13 +123,14 @@ class SendNotificationBpmnSpec extends Specification {
 
     }
 
-
     def 'can send email'() {
         given: 'a notification payload for email only'
         def notificationPayload = S('''
                                             {
                                              "businessKey" : "businessKey",
                                               "email" : {
+                                                "subject": "Subject",
+                                                "body": "This is a test email body",
                                                 "recipients" : [
                                                   "test@test.com",
                                                   "appples@test.com"
@@ -188,7 +191,6 @@ class SendNotificationBpmnSpec extends Specification {
         Assert.assertThat(taskQuery().processInstanceId(instance.id).list().size(), Matchers.is(0))
         assertThat(instance).hasPassed('sendSMSs')
     }
-
 
     def 'can send both SMS and email'() {
         given: 'a notification payload for both sms and email'
@@ -361,4 +363,155 @@ class SendNotificationBpmnSpec extends Specification {
         assertThat(instance).hasPassed('sendSES')
     }
 
+    def 'User cancels retrying SES after failure'() {
+        given: 'An email has failed to send'
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('send-notifications')
+                .setVariables(['initiatedBy': 'user', 'sesFailureCode': '22'])
+                .startBeforeActivity('sesActionFailure')
+                .execute()
+
+        when: 'a request to send a SES has failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate SES failure'
+
+        assertThat(task()).hasName("Investigate SES send failure 22")
+
+        then: 'User cancels retrying SES task'
+        complete(task(), Maps.of('sesSendFailure', S('''
+                                                           {
+                                                             "retry" : false
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'process is complete'
+        assertThat(processInstance).isEnded()
+
+    }
+
+    def 'User retries sending SES after failure'() {
+        given: 'Notification request'
+        def notificationPayload = S('''
+                                            {
+                                             "businessKey" : "businessKey",
+                                              "email" : {
+                                                "attachmentUrls": [
+                                                    "http://localhost:8000/files/testPdf.pdf"
+                                                ],
+                                                "recipients" : [
+                                                  "test@test.com",
+                                                  "appples@test.com"
+                                                ]
+                                              }
+                                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        and: 'endpoint for serving file'
+        wireMockStub.stub {
+            request {
+                method 'GET'
+                url '/files/testPdf.pdf'
+            }
+            response {
+                status: 200
+                headers {
+                    "Content-Type" "application/pdf"
+                }
+            }
+        }
+
+
+        when: 'a request to send a SES has failed'
+        ProcessInstance instance = runtimeService()
+                .createProcessInstanceByKey('send-notifications')
+                .setVariables(['notificationPayload': notificationPayload, 'initiatedBy': 'user', 'sesFailureCode': '22'])
+                .startBeforeActivity('sesActionFailure')
+                .execute()
+
+        assertThat(instance).isActive()
+        and: 'User has a task to investigate SES failure'
+
+        assertThat(task()).hasName("Investigate SES send failure 22")
+
+        then: 'User decides to retry SES task'
+        complete(task(), Maps.of('sesSendFailure', S('''
+                                                           {
+                                                             "retry" : true
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+
+        then: 'email is sent'
+        Assert.assertThat(taskQuery().processInstanceId(instance.id).list().size(), Matchers.is(0))
+        assertThat(instance).hasPassed('sendSES')
+    }
+
+    def 'User cancels retrying SNS after failure'() {
+        given: 'An SMS has failed to send'
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('send-notifications')
+                .setVariables(['initiatedBy': 'user', 'snsFailureCode': '22'])
+                .startBeforeActivity('snsActionFailure')
+                .execute()
+
+        when: 'a request to send a SMS has failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate SNS failure'
+
+        assertThat(task()).hasName("Investigate SNS failure 22")
+
+        then: 'User cancels retrying SMS task'
+        complete(task(), Maps.of('snsSendFailure', S('''
+                                                           {
+                                                             "retry" : false
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'process is complete'
+        assertThat(processInstance).isEnded()
+
+    }
+
+    def 'User retries sending SNS after failure'() {
+        given: 'Notification request'
+        def notificationPayload = S('''
+                                            {
+                                             "businessKey" : "businessKey",
+                                              "sms" : {
+                                                "message" : "Hello",
+                                                "phoneNumbers": [
+                                                  "0124444343434",
+                                                  "0343434433434"
+                                                ]
+                                              }
+                                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+
+        when: 'a request to send a SNS has failed'
+        ProcessInstance instance = runtimeService()
+                .createProcessInstanceByKey('send-notifications')
+                .setVariables(['notificationPayload': notificationPayload, 'initiatedBy': 'user', 'snsFailureCode': '22', 'phoneNumber': '0124444343434'])
+                .startBeforeActivity('snsActionFailure')
+                .execute()
+
+        assertThat(instance).isActive()
+        and: 'User has a task to investigate SMS failure'
+
+        assertThat(task()).hasName("Investigate SNS failure 22")
+
+        then: 'User decides to retry SES task'
+        complete(task(), Maps.of('snsSendFailure', S('''
+                                                           {
+                                                             "retry" : true
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+
+        then: 'email is sent'
+        Assert.assertThat(taskQuery().processInstanceId(instance.id).list().size(), Matchers.is(0))
+        assertThat(instance).hasPassed('sendSMS')
+    }
 }

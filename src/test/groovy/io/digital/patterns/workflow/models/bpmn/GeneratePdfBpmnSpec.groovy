@@ -9,6 +9,7 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
 import io.digital.patterns.workflow.pdf.PdfService
+import org.apache.groovy.util.Maps
 import org.camunda.bpm.engine.runtime.ProcessInstance
 import org.camunda.bpm.engine.test.Deployment
 import org.camunda.bpm.engine.test.ProcessEngineRule
@@ -25,6 +26,7 @@ import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
+import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
 import static org.camunda.spin.Spin.S
 
 @Deployment(resources = ['./models/bpmn/generate-pdf.bpmn'])
@@ -148,7 +150,6 @@ class GeneratePdfBpmnSpec extends Specification {
         then: 'process instance should have passed generate pdf task'
         assertThat(instance).hasPassed('generatePdf')
     }
-
 
     def 'can receive message from pdf server'() {
         given: 'forms that a user has selected'
@@ -296,6 +297,93 @@ class GeneratePdfBpmnSpec extends Specification {
         then: 'support task should be created'
         assertThat(instance).isWaitingAt('pdfFailureUserTask')
         assertThat(task()).hasDescription('PDF for buildingPassRequest has not been generated')
+
+    }
+
+    def 'PDF generation failed and user does not retry'() {
+        given: 'A PDF failed to generate'
+
+        def form = S('''{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('generate-pdf')
+                .setVariables(['businessKey': 'businessKey', 'initiatedBy': 'user', 'form': form])
+                .startBeforeActivity('pdfFailureUserTask')
+                .execute()
+
+        when: 'a request to initiate pdf has failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate PDF failure issue'
+
+        assertThat(task()).hasName("Investigate generate PDF for failure ${S(form).prop('name').stringValue()}")
+
+        then: 'User decides not to retry PDF generation'
+        complete(task(), Maps.of('investigateFormPDF', S('''
+                                                           {
+                                                             "retry" : false
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'Sub process is complete'
+        assertThat(processInstance).hasPassed('EndEvent_1mmwa26')
+
+    }
+
+    def 'PDF generation failed and user retries generation'() {
+        given: 'An email has failed to send'
+
+        def generatePdf = S('''{
+                            "businessKey" : "businessKey",
+                            "forms": [{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }]
+                            
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        def form = S('''{
+                                "name": "buildingPassRequest",
+                                "title" : "Building pass request",
+                                "dataPath": "businessKey/buildingPassRequest/20200128T083155-xx1@x.com.json",
+                                "submissionDate": "2020-01-28T08:31:55",
+                                "submittedBy": "xx1@x.com",
+                                "formVersionId": "84a32079-8e8b-4042-91db-c75d1cc3933a"
+                            }''', DataFormats.JSON_DATAFORMAT_NAME)
+
+        ProcessInstance processInstance = runtimeService()
+                .createProcessInstanceByKey('generate-pdf')
+                .setVariables(['generatePdf': generatePdf, 'businessKey': 'businessKey', 'initiatedBy': 'user', 'form': form])
+                .startBeforeActivity('pdfFailureUserTask')
+                .execute()
+
+        when: 'a request to initiate pdf has failed'
+
+        assertThat(processInstance).isActive()
+        and: 'User has a task to investigate PDF issue'
+
+        assertThat(task()).hasName("Investigate generate PDF for failure ${S(form).prop('name').stringValue()}")
+
+        then: 'User selects to retry PDF generation'
+        complete(task(), Maps.of('investigateFormPDF', S('''
+                                                           {
+                                                             "retry" : true
+                                                           }
+                                                           ''', JSON_DATAFORMAT_NAME)))
+
+        and: 'PDF is retried'
+        assertThat(processInstance).hasPassed('generatePdf')
 
     }
 
