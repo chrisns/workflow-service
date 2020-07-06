@@ -573,4 +573,48 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
         assertThat(processInstance).hasPassed('generatePdf')
 
     }
+
+    def 'No attachments so dont send mail'() {
+        given: 'A request to send an email'
+
+        when: 'There are no attachments'
+        ProcessInstance instance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['initiatedBy': 'user',])
+                .startBeforeActivity('hasAttachments')
+                .execute()
+
+        then: 'process instance completed'
+        assertThat(instance).isEnded()
+    }
+
+    def 'No attachments so dont send mail - empty list defined'() {
+        given: 'A request to send an email'
+        def attachmentIds = []
+
+        when: 'There are no attachments'
+        ProcessInstance instance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['attachmentIds': attachmentIds, 'initiatedBy': 'user',])
+                .startBeforeActivity('hasAttachments')
+                .execute()
+
+        then: 'process instance completed'
+        assertThat(instance).isEnded()
+    }
+
+    def 'Has attachments so send mail'() {
+        given: 'A request to send an email'
+        def attachmentIds = ['file1', 'file2']
+
+        when: 'There are attachments defined'
+        ProcessInstance instance = runtimeService()
+                .createProcessInstanceByKey('generate-and-send-pdf')
+                .setVariables(['attachmentIds': attachmentIds, 'initiatedBy': 'user',])
+                .startBeforeActivity('hasAttachments')
+                .execute()
+
+        then: 'should be waiting at sending pdf'
+        assertThat(instance).isWaitingAt('sendpdfs')
+    }
 }

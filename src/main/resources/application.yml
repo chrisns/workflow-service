@@ -67,6 +67,20 @@ camunda:
 
 server:
   servlet.context-path: /camunda
+  forward-headers-strategy: native
+  tomcat:
+    remote-ip-header: x-forwarded-for
+    protocol-header: x-forwarded-proto
+  ssl:
+    enabled: ${ssl.enabled:false}
+    key-alias: cert
+    key-store: /etc/keystore/keystore.p12
+    key-store-password: changeit
+    key-password: changeit
+    key-store-type: PKCS12
+    trust-store: ${javax.net.ssl.trustStore:/etc/keystore/cacerts}
+    trust-store-password: ${javax.net.ssl.trustStorePassword:changeit}
+    trust-store-type: ${javax.net.ssl.trustStoreType:PKCS12}
 
 aws:
   region: ${AWS_REGION:eu-west-2}

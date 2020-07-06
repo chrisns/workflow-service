@@ -514,4 +514,5 @@ class SendNotificationBpmnSpec extends Specification {
         Assert.assertThat(taskQuery().processInstanceId(instance.id).list().size(), Matchers.is(0))
         assertThat(instance).hasPassed('sendSMS')
     }
+
 }
