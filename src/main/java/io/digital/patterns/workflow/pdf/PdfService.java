@@ -16,6 +16,7 @@ import org.camunda.spin.json.SpinJsonNode;
 import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
@@ -191,14 +192,24 @@ public class PdfService {
                     if (!new URI(id).isAbsolute()) {
                         S3Object object = amazonS3.getObject(environment.getProperty("aws.s3.pdfs"), id);
                         dataSource = new ByteArrayDataSource(object.getObjectContent(), "application/pdf");
+                        attachment.setFileName(id);
+                        attachment.setContent("Content-Type", "application/pdf");
                     } else {
                         dataSource = restTemplate.execute(id, HttpMethod.GET, null,
-                                (ResponseExtractor<DataSource>) response ->
-                                        new ByteArrayDataSource(response.getBody(), "application/pdf"));
-
+                                (ResponseExtractor<DataSource>) response -> {
+                                    String type = Objects
+                                            .requireNonNull(response.getHeaders().getContentType()).toString();
+                                    try {
+                                        attachment.setFileName(response.getHeaders()
+                                                .getContentDisposition().getFilename());
+                                        attachment.setContent("Content-Type", type);
+                                    } catch (MessagingException e) {
+                                        log.error("Unable to set file name {}", e.getMessage());
+                                    }
+                                    return new ByteArrayDataSource(response.getBody(), type);
+                                });
                     }
                     attachment.setDataHandler(new DataHandler(dataSource));
-                    attachment.setFileName(id);
                     attachment.setHeader("Content-ID", "<" + UUID.randomUUID().toString() + ">");
 
                     mp.addBodyPart(attachment);
@@ -229,3 +240,4 @@ public class PdfService {
         return FormDataService.key(businessKey, formName, submittedBy, submissionDate);
     }
 }
+

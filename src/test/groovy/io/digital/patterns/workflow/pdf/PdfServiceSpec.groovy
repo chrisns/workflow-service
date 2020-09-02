@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
+import com.amazonaws.services.simpleemail.model.SendRawEmailRequest
 import com.amazonaws.services.simpleemail.model.SendRawEmailResult
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.junit.WireMockRule
@@ -217,7 +218,8 @@ class PdfServiceSpec extends Specification {
             response {
                 status: 200
                 headers {
-                    "Content-Type" "application/octet-stream"
+                    "Content-Type" "application/pdf"
+                    "Content-Disposition" "attachment; filename=downloadfile-2.PDF"
                 }
             }
         }

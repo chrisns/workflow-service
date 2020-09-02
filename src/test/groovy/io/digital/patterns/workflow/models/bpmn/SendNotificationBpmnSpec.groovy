@@ -324,6 +324,7 @@ class SendNotificationBpmnSpec extends Specification {
                 status: 200
                 headers {
                     "Content-Type" "application/pdf"
+                    "Content-Disposition" "attachment; filename=downloadfile-2.PDF"
                 }
             }
         }
@@ -417,6 +418,7 @@ class SendNotificationBpmnSpec extends Specification {
                 status: 200
                 headers {
                     "Content-Type" "application/pdf"
+                    "Content-Disposition" "attachment; filename=downloadfile-2.PDF"
                 }
             }
         }
