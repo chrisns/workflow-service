@@ -76,19 +76,18 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+    compile group: 'org.camunda.bpm.extension', name: 'camunda-bpm-identity-keycloak', version: '1.5.0'
 
     compile('org.camunda.spin:camunda-spin-dataformat-json-jackson')
     compile('org.camunda.bpm:camunda-engine-plugin-spin')
     compile('org.camunda.bpm:camunda-engine-plugin-connect')
     compile('org.camunda.connect:camunda-connect-connectors-all:1.0.7')
     compile('org.camunda.connect:camunda-connect-core:1.4.0')
+    compile('org.camunda.spin:camunda-spin-core:1.9.0')
+    compile('org.camunda.spin:camunda-spin-dataformat-all:1.9.0')
+    compile('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter-rest:7.13.0')
 
-    implementation ('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter-rest:7.13.0')
-    implementation group: 'org.camunda.bpm.extension', name: 'camunda-bpm-identity-keycloak', version: '1.5.0'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-    implementation('org.camunda.spin:camunda-spin-dataformat-json-jackson:1.9.0')
-    implementation 'org.camunda.spin:camunda-spin-core:1.9.0'
-    implementation 'org.camunda.spin:camunda-spin-dataformat-all:1.9.0'
+    compile('org.springframework.boot:spring-boot-starter-data-jdbc')
 
     implementation 'org.codehaus.groovy:groovy-all:2.5.10'
     implementation('uk.gov.service.notify:notifications-java-client:3.8.0-RELEASE')
