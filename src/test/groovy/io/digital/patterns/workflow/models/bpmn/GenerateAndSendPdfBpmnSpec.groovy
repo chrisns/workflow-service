@@ -116,6 +116,7 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
             }
         }
 
+
         amazonSimpleEmailService
                 .verifyEmailIdentity(new VerifyEmailIdentityRequest().withEmailAddress("from@from.com"))
 

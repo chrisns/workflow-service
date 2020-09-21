@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.HistoryService;
 import org.camunda.bpm.engine.RepositoryService;
-import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.history.HistoricProcessInstance;
 import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoryEvent;
@@ -29,12 +28,11 @@ import static org.springframework.transaction.support.TransactionSynchronization
 @AllArgsConstructor
 public class FormDataVariablePersistListener implements HistoryEventHandler {
 
-    public static final String FAILED_TO_CREATE_S3_RECORD = "FAILED_TO_CREATE_S3_RECORD";
+    public static final String FAILED_TO_CREATE_ES_RECORD = "FAILED_TO_CREATE_ES_RECORD";
 
     protected static final List<String> VARIABLE_EVENT_TYPES = new ArrayList<>();
     private static final ConcurrentHashMap<String, String> S3_PRODUCT = new ConcurrentHashMap<>();
     private final FormDataService formDataService;
-    private final RuntimeService runtimeService;
     private final RepositoryService repositoryService;
     private final HistoryService historyService;
     private final FormObjectSplitter formObjectSplitter;
@@ -90,20 +88,13 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
                                         log.info("Initiating save of form data");
                                         String key = formDataService.save(form, processInstance,
                                                 variable.getExecutionId(), product);
-                                        log.info("S3 key '{}'", key);
+                                        log.info("Saved form data '{}'", key);
                                     }
                             );
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Failed to save to S3 '{}'", e.getMessage());
-                    runtimeService.createIncident(
-                            FAILED_TO_CREATE_S3_RECORD,
-                            historyEvent.getExecutionId(),
-                            "Failed perform post transaction activity",
-                            e.getMessage()
-
-                    );
+                    log.error("Failed to save to S3", e);
                 }
             }
         }

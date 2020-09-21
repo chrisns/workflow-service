@@ -95,6 +95,7 @@ class GeneratePdfBpmnSpec extends Specification {
         Mocks.register('pdfService', pdfService)
         Mocks.register('environment', environment)
 
+
         wireMockStub.stub {
             request {
                 method 'POST'

@@ -16,7 +16,6 @@ import org.camunda.spin.json.SpinJsonNode;
 import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;

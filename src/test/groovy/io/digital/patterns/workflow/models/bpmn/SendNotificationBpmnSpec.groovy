@@ -32,7 +32,6 @@ import spock.lang.Specification
 import static com.github.tomakehurst.wiremock.http.Response.response
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.*
 import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
-import static org.camunda.spin.DataFormats.JSON_DATAFORMAT_NAME
 import static org.camunda.spin.Spin.S
 
 @Deployment(resources = ['./models/bpmn/send-notifications.bpmn'])
@@ -54,7 +53,7 @@ class SendNotificationBpmnSpec extends Specification {
 
     @Shared
     static LocalStackContainer localstack =
-            new LocalStackContainer().withServices(LocalStackContainer.Service.SES,
+            new LocalStackContainer("0.11.4").withServices(LocalStackContainer.Service.SES,
                     LocalStackContainer.Service.S3,
                     LocalStackContainer.Service.SNS)
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/DMN/20151101/dmn.xsd" id="Definitions_0rnwaud" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="3.3.4">
+  <decision id="caseActions" name="CaseActions">
+    <decisionTable id="decisionTable_1" hitPolicy="ANY">
+      <input id="input_1" label="Case Process Instance Keys">
+        <inputExpression id="inputExpression_1" typeRef="string" expressionLanguage="FEEL">
+          <text>caseProcessKeys</text>
+        </inputExpression>
+      </input>
+      <input id="InputClause_0gccngn" label="User roles">
+        <inputExpression id="LiteralExpression_1de4es3" typeRef="string" expressionLanguage="FEEL">
+          <text>platformUser.roles</text>
+        </inputExpression>
+      </input>
+      <output id="output_1" label="Available Action" name="actionProcessKey" typeRef="string" />
+      <rule id="DecisionRule_1tdydg8">
+        <inputEntry id="UnaryTests_09fln2l">
+          <text>list contains(caseProcessKeys, "test-process")</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0u31oel">
+          <text>list contains(platformUser.roles, "special-role")</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1qy4129">
+          <text>"userTask"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

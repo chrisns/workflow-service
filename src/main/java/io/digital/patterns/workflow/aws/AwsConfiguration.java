@@ -1,8 +1,9 @@
 package io.digital.patterns.workflow.aws;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
+import com.amazonaws.auth.AWS4Signer;
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
@@ -15,6 +16,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
 import com.amazonaws.services.sns.AmazonSNSClient;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -91,6 +95,29 @@ public class AwsConfiguration {
                 .withRegion(Regions.fromName(awsProperties.getSnsRegion()))
                 .withCredentials(credentials()).build();
 
+    }
+
+    @Bean(destroyMethod = "close")
+    public RestHighLevelClient client() {
+
+        AWSCredentials credentials = new BasicAWSCredentials(awsProperties.getCredentials().getAccessKey()
+                , awsProperties.getCredentials().getSecretKey());
+
+        final AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(credentials);
+        AWS4Signer signer = new AWS4Signer();
+        signer.setRegionName(awsProperties.getElasticSearch().getRegion());
+        signer.setServiceName("es");
+
+        return new RestHighLevelClient(
+                RestClient.builder(new HttpHost(
+                        awsProperties.getElasticSearch().getEndpoint(), 443, "https"
+                )).setHttpClientConfigCallback(httpClientBuilder ->
+                        httpClientBuilder.addInterceptorFirst(new AWSRequestSigningApacheInterceptor("es",
+                                signer, credentialsProvider)
+                        )
+                )
+
+        );
     }
 
 }

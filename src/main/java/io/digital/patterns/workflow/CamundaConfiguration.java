@@ -14,6 +14,7 @@ import org.camunda.bpm.spring.boot.starter.configuration.impl.AbstractCamundaCon
 import org.camunda.connect.plugin.impl.ConnectProcessEnginePlugin;
 import org.camunda.spin.impl.json.jackson.format.JacksonJsonDataFormat;
 import org.camunda.spin.plugin.impl.SpinProcessEnginePlugin;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,21 +43,24 @@ public class CamundaConfiguration {
 
         private final AmazonS3 amazonS3;
         private final AwsProperties awsProperties;
+        private final RestHighLevelClient elasticsearchClient;
 
-        public S3VariablePersistenceConfiguration(AmazonS3 amazonS3, AwsProperties awsProperties) {
+        public S3VariablePersistenceConfiguration(AmazonS3 amazonS3, AwsProperties awsProperties,
+                                                  RestHighLevelClient elasticsearchClient) {
             this.amazonS3 = amazonS3;
             this.awsProperties = awsProperties;
+            this.elasticsearchClient = elasticsearchClient;
         }
 
 
         @Override
         public void preInit(SpringProcessEngineConfiguration processEngineConfiguration) {
+            processEngineConfiguration.setJavaSerializationFormatEnabled(true);
             processEngineConfiguration.setHistoryEventHandler(
                     new CompositeDbHistoryEventHandler(
                             new FormDataVariablePersistListener(
                                     new FormDataService(processEngineConfiguration.getRuntimeService(),
-                                            amazonS3, awsProperties),
-                                    processEngineConfiguration.getRuntimeService(),
+                                            amazonS3, awsProperties, elasticsearchClient),
                                     processEngineConfiguration.getRepositoryService(),
                                     processEngineConfiguration.getHistoryService(),
                                     new FormObjectSplitter()
