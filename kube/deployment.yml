@@ -39,14 +39,14 @@ spec:
           httpGet:
             path: /camunda/engine
             port: 8443
-            scheme: https
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 20
         livenessProbe:
           httpGet:
             path: /camunda/actuator/health
             port: 8443
-            scheme: https
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 20
         volumeMounts:

@@ -86,6 +86,12 @@ aws:
   region: ${AWS_REGION:eu-west-2}
   bucket-name: ${aws.s3.formData:}
   sns-region: ${aws.sns.region:eu-west-1}
+  elastic-search:
+    region: ${aws.elastic.search.region:eu-west-2}
+    endpoint:  ${aws.elastic.search.endpoint:}
+    credentials:
+      access-key: ${aws.credentials.access-key:}
+      secret-key: ${aws.credentials.access-key:}
   credentials:
     access-key: ${AWS_ACCESS_KEY:}
     secret-Key: ${AWS_SECRET_KEY:}

@@ -1,6 +1,5 @@
 package io.digital.patterns.workflow.aws;
 
-import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "aws")
 @Component
 @Data
-@Builder
 public class AwsProperties {
 
     private String region;
