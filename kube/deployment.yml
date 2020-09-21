@@ -18,52 +18,10 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
       containers:
-      - name: {{.WORKFLOW_SERVICE_NAME}}-proxy
-        image: {{.NGINX_IMAGE}}:{{.NGINX_TAG}}
-        imagePullPolicy: Always
-        securityContext:
-          runAsNonRoot: true
-          capabilities:
-            drop:
-             - SETUID
-             - SETGID
-        resources:
-         limits:
-          memory: "100Mi"
-          cpu: "100m"
-         requests:
-          memory: "50Mi"
-          cpu: "100m"
-        env:
-        - name: PROXY_SERVICE_HOST
-          value: 'http://127.0.0.1'
-        - name: PROXY_SERVICE_PORT
-          value: "8080"
-        - name: SERVER_CERT
-          value: "/certs/tls.crt"
-        - name: SERVER_KEY
-          value: "/certs/tls.key"
-        - name: LOG_FORMAT_NAME
-          value: 'json'
-        - name: ENABLE_UUID_PARAM
-          value: "FALSE"
-        - name: NAXSI_USE_DEFAULT_RULES
-          value: "FALSE"
-        - name: PORT_IN_HOST_HEADER
-          value: "FALSE"
-        - name: ERROR_REDIRECT_CODES
-          value: "599"
-        - name: STATSD_METRICS
-          value: "FALSE"
-        ports:
-        - name: https
-          containerPort: 10443
-        volumeMounts:
-          - name: certs
-            mountPath: /certs
-            readOnly: true
       - name: {{.WORKFLOW_SERVICE_NAME}}
         image: {{.WORKFLOW_SERVICE_IMAGE}}:{{.WORKFLOW_SERVICE_TAG}}
+        command: ["/bin/sh"]
+        args: ["-c", "/app/run.sh -Djava.security.egd=file:/dev/./urandom -Djavax.net.ssl.trustStore=/etc/keystore/cacerts -Djavax.net.ssl.trustStoreType=pkcs12 -Djavax.net.ssl.trustStorePassword=changeit -jar /app/workflow-service.jar"]
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
@@ -75,20 +33,20 @@ spec:
             memory: "6144Mi"
             cpu: "4000m"
         ports:
-          - name: http
-            containerPort: 8080
+          - name: https
+            containerPort: 8443
         readinessProbe:
           httpGet:
             path: /camunda/engine
-            port: 8080
-            scheme: HTTP
+            port: 8443
+            scheme: https
           initialDelaySeconds: 30
           periodSeconds: 20
         livenessProbe:
           httpGet:
             path: /camunda/actuator/health
-            port: 8080
-            scheme: HTTP
+            port: 8443
+            scheme: https
           initialDelaySeconds: 30
           periodSeconds: 20
         volumeMounts:

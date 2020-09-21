@@ -145,7 +145,7 @@ dependencies {
     testImplementation 'com.h2database:h2:1.4.200'
     testImplementation('com.github.tomjankes:wiremock-groovy:0.2.0'){
         // Flakey build issue where there is no gradle cache:
-        // Error: Could not find com.github.jknack.handlebars.java:handlebars:4.0.7
+        // Error: Could not find com.github.jknack.handlebars.java:handlebars:4.1.2
         // These dependencies shouldn't be part of the configuration, because it's not declared in the pom.xml,
         // but somehow Gradle puts it in anyway.
         exclude group: 'com.github.jknack.handlebars.java'
@@ -161,7 +161,7 @@ dependencies {
     }
     testImplementation('org.springframework.cloud:spring-cloud-starter-contract-stub-runner:2.2.2.RELEASE'){
         // Flakey build issue where there is no gradle cache:
-        // Error: Could not find com.github.jknack.handlebars.java:handlebars:4.0.7
+        // Error: Could not find com.github.jknack.handlebars.java:handlebars:4.1.2
         // These dependencies shouldn't be part of the configuration, because it's not declared in the pom.xml,
         // but somehow Gradle puts it in anyway.
         exclude group: 'com.github.jknack.handlebars.java'
