@@ -81,17 +81,19 @@ server:
     trust-store: ${javax.net.ssl.trustStore:/etc/keystore/cacerts}
     trust-store-password: ${javax.net.ssl.trustStorePassword:changeit}
     trust-store-type: ${javax.net.ssl.trustStoreType:PKCS12}
+  port: ${server-port:8080}
 
 aws:
   region: ${AWS_REGION:eu-west-2}
   bucket-name: ${aws.s3.formData:}
   sns-region: ${aws.sns.region:eu-west-1}
+  case-bucket-name: ${aws.s3.case-bucket-name}
   elastic-search:
-    region: ${aws.elastic.search.region:eu-west-2}
-    endpoint:  ${aws.elastic.search.endpoint:}
+    region: ${aws.elasticsearch.region:eu-west-2}
+    endpoint:  ${aws.elasticsearch.endpoint:}
     credentials:
-      access-key: ${aws.credentials.access-key:}
-      secret-key: ${aws.credentials.access-key:}
+      access-key: ${aws.elasticsearch.credentials.access-key:}
+      secret-key: ${aws.elasticsearch.credentials.access-key:}
   credentials:
     access-key: ${AWS_ACCESS_KEY:}
     secret-Key: ${AWS_SECRET_KEY:}

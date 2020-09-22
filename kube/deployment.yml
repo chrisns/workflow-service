@@ -21,7 +21,7 @@ spec:
       - name: {{.WORKFLOW_SERVICE_NAME}}
         image: {{.WORKFLOW_SERVICE_IMAGE}}:{{.WORKFLOW_SERVICE_TAG}}
         command: ["/bin/sh"]
-        args: ["-c", "/app/run.sh -Djava.security.egd=file:/dev/./urandom -Djavax.net.ssl.trustStore=/etc/keystore/cacerts -Djavax.net.ssl.trustStoreType=pkcs12 -Djavax.net.ssl.trustStorePassword=changeit -jar /app/workflow-service.jar"]
+        args: ["-c", "/app/run.sh -Djava.security.egd=file:/dev/./urandom -Djavax.net.ssl.keyStore=/etc/keystore/keystore.p12 -Djavax.net.ssl.keyStorePassword=changeit  -Djavax.net.ssl.trustStore=/etc/keystore/cacerts -Djavax.net.ssl.trustStoreType=pkcs12 -Djavax.net.ssl.trustStorePassword=changeit -jar /app/workflow-service.jar"]
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
