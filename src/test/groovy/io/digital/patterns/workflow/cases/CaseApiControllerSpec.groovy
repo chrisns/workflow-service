@@ -30,6 +30,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.retry.support.RetryTemplate
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -151,7 +152,8 @@ class CaseApiControllerSpec extends Specification {
                                         formDataService,
                                         processEngineRule.repositoryService,
                                         processEngineRule.historyService,
-                                        new FormObjectSplitter()
+                                        new FormObjectSplitter(),
+                                        new RetryTemplate()
                                 )
                         )
                 )

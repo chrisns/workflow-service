@@ -17,6 +17,7 @@ import org.camunda.spin.plugin.impl.SpinProcessEnginePlugin;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.support.RetryTemplate;
 
 @Slf4j
 @Configuration
@@ -44,12 +45,15 @@ public class CamundaConfiguration {
         private final AmazonS3 amazonS3;
         private final AwsProperties awsProperties;
         private final RestHighLevelClient elasticsearchClient;
+        private final RetryTemplate retryTemplate;
 
         public S3VariablePersistenceConfiguration(AmazonS3 amazonS3, AwsProperties awsProperties,
-                                                  RestHighLevelClient elasticsearchClient) {
+                                                  RestHighLevelClient elasticsearchClient,
+                                                  RetryTemplate retryTemplate) {
             this.amazonS3 = amazonS3;
             this.awsProperties = awsProperties;
             this.elasticsearchClient = elasticsearchClient;
+            this.retryTemplate = retryTemplate;
         }
 
 
@@ -63,7 +67,8 @@ public class CamundaConfiguration {
                                             amazonS3, awsProperties, elasticsearchClient),
                                     processEngineConfiguration.getRepositoryService(),
                                     processEngineConfiguration.getHistoryService(),
-                                    new FormObjectSplitter()
+                                    new FormObjectSplitter(),
+                                    retryTemplate
                             )));
             log.info("S3 variable persistence configured");
         }

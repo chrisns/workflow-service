@@ -14,6 +14,8 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.camunda.CamundaProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 
 import java.nio.charset.StandardCharsets;
@@ -28,14 +30,13 @@ import static org.springframework.transaction.support.TransactionSynchronization
 @AllArgsConstructor
 public class FormDataVariablePersistListener implements HistoryEventHandler {
 
-    public static final String FAILED_TO_CREATE_ES_RECORD = "FAILED_TO_CREATE_ES_RECORD";
-
     protected static final List<String> VARIABLE_EVENT_TYPES = new ArrayList<>();
     private static final ConcurrentHashMap<String, String> S3_PRODUCT = new ConcurrentHashMap<>();
     private final FormDataService formDataService;
     private final RepositoryService repositoryService;
     private final HistoryService historyService;
     private final FormObjectSplitter formObjectSplitter;
+    private final RetryTemplate retryTemplate;
 
     static {
         VARIABLE_EVENT_TYPES.add(HistoryEventTypes.VARIABLE_INSTANCE_CREATE.getEventName());
@@ -61,49 +62,51 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
         private BpmnModelInstance model;
 
         private final Logger log = LoggerFactory.getLogger(VariableS3TransactionSynchronisation.class);
+
         @Override
         public void afterCompletion(int status) {
             super.afterCompletion(status);
             if (status == STATUS_COMMITTED) {
-                try {
-                    HistoricVariableUpdateEventEntity variable = (HistoricVariableUpdateEventEntity) historyEvent;
-                    String asJson = null;
-                    if (variable.getSerializerName().equalsIgnoreCase("json")) {
-                        asJson = new String(variable.getByteValue(), StandardCharsets.UTF_8);
-                    }
-                    if (asJson != null) {
-                        HistoricProcessInstance processInstance = historyService.createHistoricProcessInstanceQuery()
-                                .processInstanceId(variable.getProcessInstanceId()).singleResult();
-                        List<String> forms = formObjectSplitter.split(asJson);
-                        if (!forms.isEmpty()) {
-                            String product =
-                                    S3_PRODUCT.computeIfAbsent(variable.getProcessDefinitionId(),
-                                            id -> getAttribute(
-                                                    model, "product",
-                                                    s -> s,
-                                                    ""
-                                            ));
-                            forms.forEach(form ->
-                                    {
-                                        log.info("Initiating save of form data");
-                                        String key = formDataService.save(form, processInstance,
-                                                variable.getExecutionId(), product);
+
+                HistoricVariableUpdateEventEntity variable = (HistoricVariableUpdateEventEntity) historyEvent;
+                String asJson = null;
+                if (variable.getSerializerName().equalsIgnoreCase("json")) {
+                    asJson = new String(variable.getByteValue(), StandardCharsets.UTF_8);
+                }
+                if (asJson != null) {
+                    HistoricProcessInstance processInstance = historyService.createHistoricProcessInstanceQuery()
+                            .processInstanceId(variable.getProcessInstanceId()).singleResult();
+                    List<String> forms = formObjectSplitter.split(asJson);
+                    if (!forms.isEmpty()) {
+                        String product =
+                                S3_PRODUCT.computeIfAbsent(variable.getProcessDefinitionId(),
+                                        id -> getAttribute(
+                                                model, "product",
+                                                s -> s,
+                                                ""
+                                        ));
+                        forms.forEach(form ->
+                                {
+                                    log.info("Initiating save of form data");
+                                    try {
+                                        String key = retryTemplate.execute((RetryCallback<String, Throwable>)
+                                                context -> formDataService.save(form, processInstance,
+                                                        variable.getExecutionId(), product));
                                         log.info("Saved form data '{}'", key);
+                                    } catch (Throwable th) {
+                                        log.error("Failed to save data to S3/ES due to {}", th.getMessage());
                                     }
-                            );
-                        }
+                                }
+                        );
                     }
-                } catch (Exception e) {
-                    log.error("Underlying exception {}", e.getMessage());
-                    log.error("Failed to save to S3", e);
                 }
             }
         }
     }
 
-    private  <TO> TO getAttribute(BpmnModelInstance model, String key,
-                                  Function<String,TO> converter,
-                                  TO defaultValue) {
+    private <TO> TO getAttribute(BpmnModelInstance model, String key,
+                                 Function<String, TO> converter,
+                                 TO defaultValue) {
         return model.getModelElementsByType(CamundaProperty.class)
                 .stream()
                 .filter(p -> p.getCamundaName().equalsIgnoreCase(key))
