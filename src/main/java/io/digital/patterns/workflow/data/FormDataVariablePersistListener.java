@@ -94,6 +94,7 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
                         }
                     }
                 } catch (Exception e) {
+                    log.error("Underlying exception {}", e.getMessage());
                     log.error("Failed to save to S3", e);
                 }
             }

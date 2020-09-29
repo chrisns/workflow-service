@@ -89,8 +89,7 @@ public class FormDataService {
                 log.debug("Uploaded to S3 '{}'", putObjectResult.getETag());
                 upload(form,
                         key,
-                        processInstance,
-                        executionId);
+                        processInstance);
                 return key;
             } else {
                 log.info("Key already exists...so not uploading");
@@ -117,10 +116,9 @@ public class FormDataService {
 
     public void upload(String form,
                        String key,
-                       HistoricProcessInstance processInstance,
-                       String executionId) {
+                       HistoricProcessInstance processInstance) {
 
-
+        log.info("Saving data to ES");
         String indexKey;
         if (processInstance.getBusinessKey() != null && processInstance.getBusinessKey().split("-").length == 3) {
             indexKey = processInstance.getBusinessKey().split("-")[1];
