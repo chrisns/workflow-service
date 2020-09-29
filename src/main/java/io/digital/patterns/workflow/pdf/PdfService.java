@@ -16,6 +16,9 @@ import org.camunda.spin.json.SpinJsonNode;
 import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
@@ -45,13 +48,16 @@ public class PdfService {
     private final AmazonSimpleEmailService amazonSimpleEmailService;
     private final Environment environment;
     private final RestTemplate restTemplate;
+    private final RetryTemplate retryTemplate;
 
     public PdfService(AmazonS3 amazonS3, AmazonSimpleEmailService amazonSimpleEmailService,
-                      Environment environment, RestTemplate restTemplate) {
+                      Environment environment, RestTemplate restTemplate,
+                      RetryTemplate retryTemplate) {
         this.amazonS3 = amazonS3;
         this.amazonSimpleEmailService = amazonSimpleEmailService;
         this.environment = environment;
         this.restTemplate = restTemplate;
+        this.retryTemplate = retryTemplate;
     }
 
 
@@ -106,8 +112,12 @@ public class PdfService {
 
         try {
             if (formData == null) {
-                log.info("Bucket name '{}' and key '{}'", bucket, key);
-                S3Object object = amazonS3.getObject(bucket, key);
+                log.info("Loading form data from bucket name '{}' with key '{}'", bucket, key);
+
+                S3Object object = retryTemplate.execute(
+                        (RetryCallback<S3Object, Throwable>) context -> amazonS3.getObject(bucket, key));
+
+                log.info("Loaded data from '{}' with key '{}'", bucket, key);
                 String asJsonString = IOUtils.toString(object.getObjectContent(),
                         StandardCharsets.UTF_8.toString());
                 payload.put("submission", new JSONObject().put("data", new JSONObject(asJsonString)));
@@ -134,7 +144,7 @@ public class PdfService {
             );
 
             log.info("PDF request submitted response status '{}'", response.getStatusCodeValue());
-        } catch (Exception e) {
+        } catch (Throwable e) {
 
             String configuration = new JSONObject(Map.of(
                     "formName", formName,

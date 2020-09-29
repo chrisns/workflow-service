@@ -21,6 +21,7 @@ import org.junit.ClassRule
 import org.springframework.core.env.Environment
 import org.springframework.core.env.StandardEnvironment
 import org.springframework.core.io.ClassPathResource
+import org.springframework.retry.support.RetryTemplate
 import org.springframework.web.client.RestTemplate
 import org.testcontainers.containers.localstack.LocalStackContainer
 import spock.lang.Shared
@@ -86,7 +87,7 @@ class PdfServiceSpec extends Specification {
                 amazonS3,
                 amazonSimpleEmailService,
                 environment,
-                restTemplate
+                restTemplate, new RetryTemplate()
         )
         Mocks.register('pdfService', pdfService)
         Mocks.register('environment', environment)
