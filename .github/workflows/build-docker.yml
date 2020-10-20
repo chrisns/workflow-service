@@ -45,5 +45,3 @@ jobs:
           image: "${{ env.IMAGE }}:latest"
           fail-build: false
           severity-cutoff: critical
-      - name: anchore inline scan JSON results
-        run: cat ./anchore-reports/vulnerabilities.json;
