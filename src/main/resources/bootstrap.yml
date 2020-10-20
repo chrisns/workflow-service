@@ -6,7 +6,7 @@ spring:
 
 aws:
   secretsmanager:
-    name: workflow-service
+    name: ${APP_NAME:workflow-service}
     prefix: /secret
     fail-fast: false
     profile-separator: _
