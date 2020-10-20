@@ -70,6 +70,8 @@ spec:
                 key: awsSecretAccessKey
           - name: AWS_SECRETS_MANAGER_ENABLED
             value: "{{.AWS_SECRETS_MANAGER_ENABLED}}"
+          - name: APP_NAME
+            value: "{{.APP_NAME}}"
       volumes:
       - name: certs
         secret:
