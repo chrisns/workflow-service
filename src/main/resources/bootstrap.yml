@@ -1,6 +1,6 @@
 spring:
   application:
-    name: workflow-service
+    name: ${APP_NAME:workflow-service}
   main:
     banner-mode: OFF
 
