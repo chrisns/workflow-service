@@ -40,11 +40,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      - uses: anchore/scan-action@master
+      - uses: anchore/scan-action@main
         with:
-          image-reference: "${{ env.IMAGE }}:latest"
-          dockerfile-path: "./Dockerfile"
+          image: "${{ env.IMAGE }}:latest"
           fail-build: false
-          include-app-packages: true
+          severity-cutoff: critical
       - name: anchore inline scan JSON results
         run: cat ./anchore-reports/vulnerabilities.json;
