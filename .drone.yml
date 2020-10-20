@@ -54,6 +54,8 @@ pipeline:
       target: AWS_SECRETS_MANAGER_ENABLED
     - source: WORKFLOW_SERVICE_NAME
       target: WORKFLOW_SERVICE_NAME
+    - source: WORKFLOW_SERVICE_NAME
+      target: APP_NAME
     - source: DEV_WORKFLOW_SERVICE_URL
       target: WORKFLOW_SERVICE_URL
     - source: WORKFLOW_SERVICE_IMAGE
@@ -95,6 +97,8 @@ pipeline:
       target: AWS_SECRETS_MANAGER_ENABLED
     - source: COP_SERVICE_NAME
       target: WORKFLOW_SERVICE_NAME
+    - source: COP_SERVICE_NAME
+      target: APP_NAME
     - source: DEV_COP_SERVICE_URL
       target: WORKFLOW_SERVICE_URL
     - source: WORKFLOW_SERVICE_IMAGE
