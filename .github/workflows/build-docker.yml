@@ -11,9 +11,9 @@ jobs:
       REPO: 'ukhomeofficedigital/workflow-service'
     steps:
       - uses: actions/checkout@v2
-      - uses: joschi/setup-jdk@v1
+      - uses: joschi/setup-jdk@v2
         with:
-          java-version: 'openjdk14'
+          java-version: '11'
           architecture: 'x64'
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
