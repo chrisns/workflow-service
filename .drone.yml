@@ -138,7 +138,7 @@ steps:
     event:
     - promote
     target:
-    - dev_cop_service
+    - dev
 
 - name: deploy_to_production
   pull: if-not-exists

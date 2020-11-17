@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       name: {{.WORKFLOW_SERVICE_NAME}}
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 3
   template:
     metadata:
