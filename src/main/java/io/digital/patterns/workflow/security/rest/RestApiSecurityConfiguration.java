@@ -52,6 +52,8 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .csrf().ignoringAntMatchers("/cases/**", "/engine-rest/**", "/webhook/**", "/actuator/**")
                 .and()
+                .requestMatchers().antMatchers("/engine-rest/**", "/cases/**", "/webhook/**")
+                .and()
                 .authorizeRequests()
                 .antMatchers("/engine-rest/deployment/create")
                 .hasAnyAuthority(bpmnUploadRoles.toArray(new String[]{}))
