@@ -24,7 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@Order(SecurityProperties.BASIC_AUTH_ORDER - 25)
+@Order(SecurityProperties.BASIC_AUTH_ORDER - 20)
 @ConditionalOnProperty(name = "rest.security.enabled", havingValue = "true", matchIfMissing = true)
 public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
@@ -50,9 +50,8 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(final HttpSecurity http) throws Exception {
         http
-                .csrf().ignoringAntMatchers("/api/**", "/engine-rest/**", "/webhook/**", "/actuator/**")
+                .csrf().ignoringAntMatchers("/cases/**", "/engine-rest/**", "/webhook/**", "/actuator/**")
                 .and()
-                .antMatcher("/engine-rest/**")
                 .authorizeRequests()
                 .antMatchers("/engine-rest/deployment/create")
                 .hasAnyAuthority(bpmnUploadRoles.toArray(new String[]{}))
@@ -76,7 +75,7 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
         FilterRegistrationBean filterRegistration = new FilterRegistrationBean();
         filterRegistration.setFilter(new KeycloakAuthenticationFilter(identityService));
         filterRegistration.setOrder(102);
-        filterRegistration.addUrlPatterns("/engine-rest/*");
+        filterRegistration.addUrlPatterns("/engine-rest/*", "/cases/*", "/webhook/*");
         return filterRegistration;
     }
 

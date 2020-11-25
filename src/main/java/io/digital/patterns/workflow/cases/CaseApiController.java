@@ -34,8 +34,9 @@ public class CaseApiController {
     public PagedModel<Case> getCases(Pageable pageable,
                                      @RequestParam("query") String query) {
 
+        JwtAuthenticationToken authentication = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         Page<Case> cases = casesApplicationService.query(query, pageable,  new PlatformUser(
-                (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication()
+                authentication
         ));
         return pagedResourcesAssembler.toModel(cases, entity -> entity);
     }
