@@ -185,7 +185,7 @@ steps:
     event:
     - promote
     target:
-    - dev
+    - dev_cerberus
 
 
 
