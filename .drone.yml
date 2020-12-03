@@ -168,7 +168,7 @@ steps:
     KUBE_SERVER:
       from_secret: DEV_KUBE_SERVER
     KUBE_TOKEN:
-      from_secret: DEV_KUBE_TOKEN
+      from_secret: DEV_CERBERUS_KUBE_TOKEN
     NGINX_IMAGE:
       from_secret: NGINX_IMAGE
     NGINX_TAG:
