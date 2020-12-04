@@ -187,9 +187,6 @@ steps:
     target:
     - dev_cerberus
 
-
-
-
 - name: deploy_to_production
   pull: if-not-exists
   image: quay.io/ukhomeofficedigital/kd
