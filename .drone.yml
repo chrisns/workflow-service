@@ -192,7 +192,7 @@ steps:
   image: quay.io/ukhomeofficedigital/kd
   commands:
   - export SPRING_PROFILES_ACTIVE="production"
-  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - export WORKFLOW_SERVICE_TAG=9a0f8d47527d0032a9f6e95463357341ce38dd8c
   - kd --insecure-skip-tls-verify -f kube/cert.yml
   - kd --insecure-skip-tls-verify -f kube/secret.yml
   - kd --insecure-skip-tls-verify -f kube/network-policy.yml
