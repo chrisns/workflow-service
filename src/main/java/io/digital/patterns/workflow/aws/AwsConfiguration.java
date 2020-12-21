@@ -105,12 +105,13 @@ public class AwsConfiguration {
 
         final AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(credentials);
         AWS4Signer signer = new AWS4Signer();
-        signer.setRegionName(awsProperties.getElasticSearch().getRegion());
+        AwsProperties.ElasticSearch elasticSearch = awsProperties.getElasticSearch();
+        signer.setRegionName(elasticSearch.getRegion());
         signer.setServiceName("es");
 
         return new RestHighLevelClient(
                 RestClient.builder(new HttpHost(
-                        awsProperties.getElasticSearch().getEndpoint(), 443, "https"
+                        elasticSearch.getEndpoint(), elasticSearch.getPort(), elasticSearch.getScheme()
                 )).setHttpClientConfigCallback(httpClientBuilder ->
                         httpClientBuilder.addInterceptorFirst(new AWSRequestSigningApacheInterceptor("es",
                                 signer, credentialsProvider)

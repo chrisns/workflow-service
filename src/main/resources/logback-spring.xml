@@ -1,5 +1,5 @@
 <configuration>
-    <springProfile name="test">
+    <springProfile name="!test">
         <springProperty scope="context" name="springAppName" source="spring.application.name"/>
         <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
         <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -29,7 +29,7 @@
         </root>
     </springProfile>
 
-    <springProfile name="!test">
+    <springProfile name="test">
         <include resource="org/springframework/boot/logging/logback/base.xml"/>
     </springProfile>
 </configuration>

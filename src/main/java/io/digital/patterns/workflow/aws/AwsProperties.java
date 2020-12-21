@@ -22,6 +22,8 @@ public class AwsProperties {
         private String region;
         private String endpoint;
         private Credentials credentials;
+        private String scheme = "https";
+        private int port = 443;
     }
 
     @Data

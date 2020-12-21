@@ -93,6 +93,8 @@ aws:
   elastic-search:
     region: ${aws.elasticsearch.region:eu-west-2}
     endpoint:  ${aws.elasticsearch.endpoint:}
+    port: ${aws.elasticsearch.port:443}
+    scheme: ${aws.elasticsearch.scheme:https}
     credentials:
       access-key: ${aws.elasticsearch.credentials.access-key:}
       secret-key: ${aws.elasticsearch.credentials.secret-key:}
