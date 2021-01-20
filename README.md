@@ -4,9 +4,47 @@
 
 Integrated Camunda engine with Cockpit.
 
-### Environment
+## Starting the service locally
 
-#### Bootstrap configuration
+1. Start all the required services:
+    ```shell script
+    docker-compose up
+    ```
+2. Follow the [steps to run Workflow Service locally](https://design-guidelines.cop.homeoffice.gov.uk/guides/workflow/local-workflow-service/#how-to-git-clone-the-workflow-engine)
+3. For WM options use:
+    ```
+   -Dencryption.passPhrase=test
+   -Dencryption.salt=test
+   -Daws.elasticsearch.region=eu-west-2
+   -Daws.elasticsearch.endpoint=localhost
+   -Daws.elasticsearch.port=9200
+   -Daws.elasticsearch.scheme=http
+   -Dauth.url=<ASK_DEVOPS>
+   -Dauth.realm=<ASK_DEVOPS>
+   -Dauth.clientId=<ASK_DEVOPS>
+   -Dauth.clientSecret=<ASK_DEVOPS>
+   -Ddatabase.url=jdbc:postgresql://localhost:5432/workflow-service
+   -Ddatabase.username=postgres
+   -Ddatabase.password=postgres
+   -Ddatabase.driver-class-name=org.postgresql.Driver
+   -Daws.s3.formData=<ASK_DEVOPS>
+   -Daws.s3.case-bucket-name=<ASK_DEVOPS>
+   -Daws.elasticsearch.credentials.access-key=x
+   -Daws.elasticsearch.credentials.secret-key=x
+   -Dusername=<ASK_DEVOPS>
+   -Dpassword=1ac74b32-<ASK_DEVOPS>
+    ```
+4. For ENV vars use:
+    ```
+   AWS_ACCESS_KEY=<ASK_DEVOPS>
+   AWS_SECRET_KEY=<ASK_DEVOPS>
+   AWS_REGION=eu-west-2
+   SPRING_PROFILES_ACTIVE=local
+    ```
+
+## Environment
+
+### Bootstrap configuration
 
 The following environment variables are required to load properties from AWS secrets manager
 
@@ -17,7 +55,7 @@ The following environment variables are required to load properties from AWS sec
 * SPRING_PROFILES_ACTIVE
 
 
-#### Application configuration
+### Application configuration
 
 The following properties need to be configured in AWS secrets manager
 

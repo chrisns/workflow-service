@@ -2,6 +2,7 @@ HELP.md
 target/
 out
 .gradle
+.env
 
 ### STS ###
 .apt_generated
