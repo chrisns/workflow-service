@@ -40,8 +40,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      - uses: anchore/scan-action@2.0.3
-        with:
-          image: "${{ env.IMAGE }}:latest"
-          fail-build: false
-          severity-cutoff: critical
+          # Disabled for now as not working incident raised with scan-action repo maintainers.
+          # https://github.com/anchore/scan-action/issues/80
+          #- uses: anchore/scan-action@2.0.3
+          # with:
+          # image: "${{ env.IMAGE }}:latest"
+          # fail-build: false
+          # severity-cutoff: critical
