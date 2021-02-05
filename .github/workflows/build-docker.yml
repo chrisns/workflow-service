@@ -40,7 +40,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # optional
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      - uses: anchore/scan-action@v2
+      - uses: anchore/scan-action@v2.0.3
         with:
           image: "${{ env.IMAGE }}:latest"
           fail-build: false
