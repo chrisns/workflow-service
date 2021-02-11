@@ -58,12 +58,12 @@ repositories {
             password System.properties.getProperty("password")
         }
     }
+    mavenCentral()
+    jcenter()
     maven {
         url "https://jitpack.io"
     }
-    mavenCentral()
     mavenLocal()
-    jcenter()
 }
 dependencyManagement {
     imports {
