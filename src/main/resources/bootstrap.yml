@@ -10,6 +10,7 @@ aws:
     prefix: /secret
     fail-fast: false
     profile-separator: _
+    default-context: ${APP_NAME:workflow-service}
     enabled: ${AWS_SECRETS_MANAGER_ENABLED:false}
 
 cloud:

@@ -97,7 +97,9 @@ public class CasesApplicationService {
             final SearchResponse results = elasticsearchClient.search(searchRequest, builder.build());
 
             final Set<String> keys = StreamSupport.stream(results.getHits().spliterator(), false)
-                    .map(s -> s.getSourceAsMap().get("businessKey").toString()).collect(toSet());
+                    .filter(s -> s.getSourceAsMap().containsKey("businessKey"))
+                    .map(s -> s.getSourceAsMap().get("businessKey").toString())
+                    .collect(toSet());
 
             List<HistoricProcessInstance> historicProcessInstances = new ArrayList<>();
             if (!keys.isEmpty()) {
