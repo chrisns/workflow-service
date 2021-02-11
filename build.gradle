@@ -67,13 +67,13 @@ repositories {
 }
 dependencyManagement {
     imports {
-        mavenBom 'org.camunda.bpm:camunda-bom:7.13.0-ee'
+        mavenBom 'org.camunda.bpm:camunda-bom:7.14.4-ee'
     }
 }
 
 
 dependencies {
-    compile group: 'org.camunda.bpm.springboot', name: 'camunda-bpm-spring-boot-starter-webapp-ee', version: '7.13.0-ee'
+    compile group: 'org.camunda.bpm.springboot', name: 'camunda-bpm-spring-boot-starter-webapp-ee', version: '7.14.4-ee'
     compile group: 'org.camunda.bpm.springboot', name: 'camunda-bpm-spring-boot-starter'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc'
@@ -88,7 +88,7 @@ dependencies {
     compile('org.camunda.connect:camunda-connect-core:1.5.0')
     compile('org.camunda.spin:camunda-spin-core:1.9.0')
     compile('org.camunda.spin:camunda-spin-dataformat-all:1.9.0')
-    compile('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter-rest:7.13.0-ee')
+    compile('org.camunda.bpm.springboot:camunda-bpm-spring-boot-starter-rest:7.14.4-ee')
 
     compile('org.springframework.boot:spring-boot-starter-data-jdbc')
 
@@ -133,6 +133,7 @@ dependencies {
     implementation 'org.elasticsearch.client:elasticsearch-rest-client:7.6.2'
     implementation 'org.springframework.retry:spring-retry:1.2.5.RELEASE'
     implementation 'org.springframework:spring-aspects:5.2.8.RELEASE'
+    implementation group: 'org.keycloak', name: 'keycloak-admin-client', version: '12.0.1'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
