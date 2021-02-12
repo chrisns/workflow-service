@@ -185,7 +185,7 @@ steps:
     event:
     - promote
     target:
-    - dev_cerberus
+    - dev
 
 - name: deploy_to_production_eforms
   pull: if-not-exists
