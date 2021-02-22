@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/UKHomeOffice/workflow-service/workflows/Publish%20Docker/badge.svg)
 
-Integrated Camunda engine with Cockpit.
+Integrated Camunda engine with Cockpit for COP, eForms & Cerberus
 
 ## Starting the service locally
 
