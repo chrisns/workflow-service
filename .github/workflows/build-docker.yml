@@ -30,7 +30,7 @@ jobs:
           registry: quay.io
           cache: true
           snapshot: true
-          tags: "${{ github.sha }}"
+          tags: "latest,${{ github.sha }}"
       - uses: 8398a7/action-slack@v2
         with:
           status: ${{ job.status }}
@@ -40,7 +40,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - uses: anchore/scan-action@v2.0.4
         with:
-          image: "${{ env.IMAGE }}:latest"
+          image: "${{ env.IMAGE }}:${{ github.sha }}"
           fail-build: false
           severity-cutoff: critical
 
