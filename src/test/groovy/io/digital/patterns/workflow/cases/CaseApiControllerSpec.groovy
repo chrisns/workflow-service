@@ -143,12 +143,13 @@ class CaseApiControllerSpec extends Specification {
         def formDataService = new FormDataService(
                 processEngineRule.runtimeService,
                 amazonS3,
-                awsProperties,
                 elasticsearchClient)
         ((ProcessEngineConfigurationImpl)processEngineRule.getProcessEngineConfiguration())
                 .setHistoryEventHandler(
                         new CompositeDbHistoryEventHandler(
                                 new FormDataVariablePersistListener(
+                                        "",
+                                        awsProperties,
                                         formDataService,
                                         processEngineRule.repositoryService,
                                         processEngineRule.historyService,
@@ -182,7 +183,7 @@ class CaseApiControllerSpec extends Specification {
                 .done()
 
         and: 'case bucket request'
-        awsProperties.getBucketName() >> "casebucket"
+        awsProperties.getCaseBucketName() >> "casebucket"
         amazonS3.createBucket("casebucket")
 
         and: 'the process definition has been uploaded to the camunda engine'
@@ -278,7 +279,7 @@ class CaseApiControllerSpec extends Specification {
                 .done()
 
         and: 'case bucket request'
-        awsProperties.getBucketName() >> "casebucket"
+        awsProperties.getCaseBucketName() >> "casebucket"
         amazonS3.createBucket("casebucket")
 
         and: 'the process definition has been uploaded to the camunda engine'

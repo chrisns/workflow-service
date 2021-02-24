@@ -15,6 +15,7 @@ import org.camunda.connect.plugin.impl.ConnectProcessEnginePlugin;
 import org.camunda.spin.impl.json.jackson.format.JacksonJsonDataFormat;
 import org.camunda.spin.plugin.impl.SpinProcessEnginePlugin;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
@@ -42,6 +43,8 @@ public class CamundaConfiguration {
     @Configuration
     public static class S3VariablePersistenceConfiguration extends AbstractCamundaConfiguration {
 
+
+        private final String bucketNamePrefix;
         private final AmazonS3 amazonS3;
         private final AwsProperties awsProperties;
         private final RestHighLevelClient elasticsearchClient;
@@ -49,7 +52,10 @@ public class CamundaConfiguration {
 
         public S3VariablePersistenceConfiguration(AmazonS3 amazonS3, AwsProperties awsProperties,
                                                   RestHighLevelClient elasticsearchClient,
-                                                  RetryTemplate retryTemplate) {
+                                                  RetryTemplate retryTemplate,
+                                                  @Value("${aws.bucket-name-prefix:}")
+                                                  String bucketNamePrefix) {
+            this.bucketNamePrefix = bucketNamePrefix;
             this.amazonS3 = amazonS3;
             this.awsProperties = awsProperties;
             this.elasticsearchClient = elasticsearchClient;
@@ -63,8 +69,10 @@ public class CamundaConfiguration {
             processEngineConfiguration.setHistoryEventHandler(
                     new CompositeDbHistoryEventHandler(
                             new FormDataVariablePersistListener(
+                                    bucketNamePrefix,
+                                    awsProperties,
                                     new FormDataService(processEngineConfiguration.getRuntimeService(),
-                                            amazonS3, awsProperties, elasticsearchClient),
+                                            amazonS3, elasticsearchClient),
                                     processEngineConfiguration.getRepositoryService(),
                                     processEngineConfiguration.getHistoryService(),
                                     new FormObjectSplitter(),

@@ -24,6 +24,8 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -97,9 +99,7 @@ public class CasesApplicationService {
             final SearchResponse results = elasticsearchClient.search(searchRequest, builder.build());
 
             final Set<String> keys = StreamSupport.stream(results.getHits().spliterator(), false)
-                    .filter(s -> s.getSourceAsMap().containsKey("businessKey"))
-                    .map(s -> s.getSourceAsMap().get("businessKey").toString())
-                    .collect(toSet());
+                    .map(s -> s.getSourceAsMap().get("businessKey").toString()).collect(toSet());
 
             List<HistoricProcessInstance> historicProcessInstances = new ArrayList<>();
             if (!keys.isEmpty()) {
@@ -141,8 +141,7 @@ public class CasesApplicationService {
         caseDetail.setBusinessKey(businessKey);
 
 
-        ObjectListing objectListing = amazonS3Client
-                .listObjects(awsConfig.getCaseBucketName(), format("%s/", businessKey));
+        ObjectListing objectListing = getObjectListingForBusinessKey(businessKey);
 
 
         List<ObjectMetadata> metadata = new ArrayList<>();
@@ -335,7 +334,7 @@ public class CasesApplicationService {
     public SpinJsonNode getSubmissionData(String businessKey, String submissionDataKey, PlatformUser platformUser) {
         S3Object object = amazonS3Client.getObject(awsConfig.getCaseBucketName(), submissionDataKey);
         try {
-            String asJsonString = IOUtils.toString(object.getObjectContent(), "UTF-8");
+            String asJsonString = IOUtils.toString(object.getObjectContent(), StandardCharsets.UTF_8);
             return Spin.JSON(asJsonString);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -344,4 +343,23 @@ public class CasesApplicationService {
     }
 
 
+    public SpinJsonNode getSubmissionData(String businessKey) {
+        ObjectListing objectListing = getObjectListingForBusinessKey(businessKey);
+        JSONArray jsonArray = new JSONArray();
+        objectListing.getObjectSummaries().forEach(summary -> {
+            S3Object object = amazonS3Client.getObject(awsConfig.getCaseBucketName(), summary.getKey());
+            try {
+                JSONObject data = new JSONObject(IOUtils.toString(object.getObjectContent(), StandardCharsets.UTF_8));
+                jsonArray.put(data);
+            } catch (Exception e) {
+                log.error("Failed to load data", e);
+            }
+        });
+        return Spin.JSON(jsonArray.toString());
+    }
+
+    private ObjectListing getObjectListingForBusinessKey(String businessKey) {
+        return amazonS3Client
+                .listObjects(awsConfig.getCaseBucketName(), format("%s/", businessKey));
+    }
 }

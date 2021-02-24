@@ -6,6 +6,7 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.model.RawMessage;
 import com.amazonaws.services.simpleemail.model.SendRawEmailRequest;
 import com.amazonaws.services.simpleemail.model.SendRawEmailResult;
+import io.digital.patterns.workflow.aws.AwsProperties;
 import io.digital.patterns.workflow.data.FormDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -17,7 +18,6 @@ import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.retry.RetryCallback;
-import org.springframework.retry.RetryContext;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResponseExtractor;
@@ -44,15 +44,18 @@ import static java.lang.String.format;
 @Service
 public class PdfService {
 
+    private final AwsProperties awsProperties;
     private final AmazonS3 amazonS3;
     private final AmazonSimpleEmailService amazonSimpleEmailService;
     private final Environment environment;
     private final RestTemplate restTemplate;
     private final RetryTemplate retryTemplate;
 
-    public PdfService(AmazonS3 amazonS3, AmazonSimpleEmailService amazonSimpleEmailService,
+    public PdfService(AwsProperties awsProperties, AmazonS3 amazonS3,
+                      AmazonSimpleEmailService amazonSimpleEmailService,
                       Environment environment, RestTemplate restTemplate,
                       RetryTemplate retryTemplate) {
+        this.awsProperties = awsProperties;
         this.amazonS3 = amazonS3;
         this.amazonSimpleEmailService = amazonSimpleEmailService;
         this.environment = environment;
@@ -100,8 +103,16 @@ public class PdfService {
 
         JSONObject formAsJson = new JSONObject(form.toString());
 
-        String bucket = environment.getProperty("aws.s3.formData")
-                + Optional.ofNullable(product).map(i -> "-" + i).orElse("");
+
+        String bucket;
+        if (product == null) {
+            bucket = awsProperties.getCaseBucketName();
+        } else {
+            String productPrefix = environment.getProperty("aws.bucket-name-prefix");
+            bucket = productPrefix + "-" + product;
+        }
+
+
         String formApiUrl = environment.getProperty("formApi.url");
         String formName = formAsJson.getString("name");
 

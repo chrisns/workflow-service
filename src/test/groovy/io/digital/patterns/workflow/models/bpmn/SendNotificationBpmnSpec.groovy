@@ -10,6 +10,7 @@ import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.amazonaws.services.sns.AmazonSNSClient
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
+import io.digital.patterns.workflow.aws.AwsProperties
 import io.digital.patterns.workflow.notification.AmazonSMSService
 import io.digital.patterns.workflow.pdf.PdfService
 import org.apache.groovy.util.Maps
@@ -69,7 +70,7 @@ class SendNotificationBpmnSpec extends Specification {
     AmazonSNSClient client
 
     def setupSpec() {
-        System.setProperty("aws.s3.formData", "formdata")
+        System.setProperty("aws.s3.case-bucket-name", "formdata")
         System.setProperty("aws.s3.pdfs", "pdfs")
         System.setProperty("ses.from.address", "from@from.com")
         localstack.start()
@@ -106,7 +107,9 @@ class SendNotificationBpmnSpec extends Specification {
                         .withEndpointConfiguration(localstack.getEndpointConfiguration(LocalStackContainer.Service.SES))
                         .withCredentials(localstack.getDefaultCredentialsProvider()).build()
 
-        pdfService = new PdfService(
+        def awsProperties = new AwsProperties()
+        awsProperties.setCaseBucketName("formdata")
+        pdfService = new PdfService(awsProperties,
                 amazonS3,
                 amazonSimpleEmailService,
                 environment,

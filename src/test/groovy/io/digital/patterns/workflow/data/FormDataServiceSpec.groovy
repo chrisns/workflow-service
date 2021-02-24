@@ -35,7 +35,6 @@ class FormDataServiceSpec extends Specification {
 
     RuntimeService runtimeService = Mock()
     AmazonS3 amazonS3
-    AwsProperties awsProperties = Mock()
     def elasticsearchClient
 
     FormDataService service
@@ -52,7 +51,7 @@ class FormDataServiceSpec extends Specification {
                 HttpHost.create(esContainer.getHttpHostAddress())
         ))
 
-        service = new FormDataService(runtimeService, amazonS3, awsProperties, elasticsearchClient )
+        service = new FormDataService(runtimeService, amazonS3, elasticsearchClient )
 
     }
 
@@ -82,10 +81,9 @@ class FormDataServiceSpec extends Specification {
 
         and: 'data set up in s3'
         amazonS3.createBucket("formdata")
-        awsProperties.getBucketName() >> "formdata"
 
         when: 'request is made'
-        service.save(form, processInstance, "id", "")
+        service.save(form, processInstance, "id", "formdata")
 
         then: 'request is not null'
         def result = amazonS3.getObject("formdata", FormDataService.key(

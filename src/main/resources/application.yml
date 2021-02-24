@@ -87,7 +87,6 @@ server:
 
 aws:
   region: ${AWS_REGION:eu-west-2}
-  bucket-name: ${aws.s3.formData:}
   sns-region: ${aws.sns.region:eu-west-1}
   case-bucket-name: ${aws.s3.case-bucket-name}
   elastic-search:
