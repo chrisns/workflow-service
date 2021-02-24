@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
-import io.digital.patterns.workflow.aws.AwsProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -37,14 +36,12 @@ public class FormDataService {
 
     private final RuntimeService runtimeService;
     private final AmazonS3 amazonS3;
-    private final AwsProperties awsProperties;
     private final RestHighLevelClient elasticsearchClient;
 
-    public FormDataService(RuntimeService runtimeService, AmazonS3 amazonS3, AwsProperties awsProperties,
+    public FormDataService(RuntimeService runtimeService, AmazonS3 amazonS3,
                            RestHighLevelClient elasticsearchClient) {
         this.runtimeService = runtimeService;
         this.amazonS3 = amazonS3;
-        this.awsProperties = awsProperties;
         this.elasticsearchClient = elasticsearchClient;
     }
 
@@ -65,10 +62,7 @@ public class FormDataService {
 
             final String key = key(businessKey, formName, submittedBy, submissionDate);
 
-            String bucketName = awsProperties.getBucketName() + (!product.equalsIgnoreCase("") ?
-                    "-" + product : "");
-
-            boolean dataExists = amazonS3.doesObjectExist(bucketName, key);
+            boolean dataExists = amazonS3.doesObjectExist(product, key);
             if (!dataExists) {
                 scratchFile
                         = File.createTempFile(UUID.randomUUID().toString(), ".json");
@@ -83,7 +77,7 @@ public class FormDataService {
                 metadata.addUserMetadata("submittedby", submittedBy);
                 metadata.addUserMetadata("submissiondate", submissionDate);
 
-                PutObjectRequest request = new PutObjectRequest(bucketName, key, scratchFile);
+                PutObjectRequest request = new PutObjectRequest(product, key, scratchFile);
                 request.setMetadata(metadata);
                 final PutObjectResult putObjectResult = amazonS3.putObject(request);
                 log.debug("Uploaded to S3 '{}'", putObjectResult.getETag());

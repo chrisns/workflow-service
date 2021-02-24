@@ -11,6 +11,7 @@ import com.amazonaws.services.simpleemail.model.SendRawEmailResult
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
+import io.digital.patterns.workflow.aws.AwsProperties
 import org.camunda.bpm.engine.runtime.ProcessInstance
 import org.camunda.bpm.engine.test.ProcessEngineRule
 import org.camunda.bpm.engine.test.mock.Mocks
@@ -83,7 +84,9 @@ class PdfServiceSpec extends Specification {
                 .enablePathStyleAccess()
                 .build()
 
-        pdfService = new PdfService(
+        def awsProperties = new AwsProperties()
+        awsProperties.setCaseBucketName("test-test")
+        pdfService = new PdfService(awsProperties,
                 amazonS3,
                 amazonSimpleEmailService,
                 environment,

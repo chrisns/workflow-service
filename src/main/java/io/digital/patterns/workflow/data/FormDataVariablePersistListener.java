@@ -1,5 +1,6 @@
 package io.digital.patterns.workflow.data;
 
+import io.digital.patterns.workflow.aws.AwsProperties;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.HistoryService;
@@ -21,7 +22,6 @@ import org.springframework.transaction.support.TransactionSynchronizationAdapter
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
@@ -31,7 +31,8 @@ import static org.springframework.transaction.support.TransactionSynchronization
 public class FormDataVariablePersistListener implements HistoryEventHandler {
 
     protected static final List<String> VARIABLE_EVENT_TYPES = new ArrayList<>();
-    private static final ConcurrentHashMap<String, String> S3_PRODUCT = new ConcurrentHashMap<>();
+    private final String bucketNamePrefix;
+    private final AwsProperties awsProperties;
     private final FormDataService formDataService;
     private final RepositoryService repositoryService;
     private final HistoryService historyService;
@@ -78,13 +79,7 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
                             .processInstanceId(variable.getProcessInstanceId()).singleResult();
                     List<String> forms = formObjectSplitter.split(asJson);
                     if (!forms.isEmpty()) {
-                        String product =
-                                S3_PRODUCT.computeIfAbsent(variable.getProcessDefinitionId(),
-                                        id -> getAttribute(
-                                                model, "product",
-                                                s -> s,
-                                                ""
-                                        ));
+                        String product = resolveProductName(bucketNamePrefix, variable, model);
                         forms.forEach(form ->
                                 {
                                     log.info("Initiating save of form data");
@@ -102,6 +97,17 @@ public class FormDataVariablePersistListener implements HistoryEventHandler {
                 }
             }
         }
+    }
+
+    private String resolveProductName(String bucketNamePrefix,
+                                      HistoricVariableUpdateEventEntity variable,
+                                      BpmnModelInstance model) {
+
+        String productName = getAttribute(model, "product", s -> s, null );
+        if (productName == null) {
+            return awsProperties.getCaseBucketName();
+        }
+        return bucketNamePrefix + "-" + productName;
     }
 
     private <TO> TO getAttribute(BpmnModelInstance model, String key,

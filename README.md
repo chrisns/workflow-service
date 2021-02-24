@@ -15,6 +15,7 @@ Integrated Camunda engine with Cockpit for COP, eForms & Cerberus
     ```
    -Dencryption.passPhrase=test
    -Dencryption.salt=test
+   -Dcamunda.variable.encryption=true
    -Daws.elasticsearch.region=eu-west-2
    -Daws.elasticsearch.endpoint=localhost
    -Daws.elasticsearch.port=9200
@@ -27,12 +28,12 @@ Integrated Camunda engine with Cockpit for COP, eForms & Cerberus
    -Ddatabase.username=postgres
    -Ddatabase.password=postgres
    -Ddatabase.driver-class-name=org.postgresql.Driver
-   -Daws.s3.formData=<ASK_DEVOPS>
    -Daws.s3.case-bucket-name=<ASK_DEVOPS>
    -Daws.elasticsearch.credentials.access-key=x
    -Daws.elasticsearch.credentials.secret-key=x
    -Dusername=<ASK_DEVOPS>
    -Dpassword=1ac74b32-<ASK_DEVOPS>
+   -Dcamunda.bpmn.upload.roles=process_admin,bpmn_uploader
     ```
 4. For ENV vars use:
     ```
@@ -68,12 +69,16 @@ The following properties need to be configured in AWS secrets manager
   "auth.clientId": "servicename",
   "auth.clientSecret": "secret",
   "auth.realm": "master",
-  "aws.s3.formData": "bucketName",
+  "aws.s3.case-bucket-name": "bucketName",
   "aws.s3.pdfs": "bucketName2",
   "formApi.url": "https://formApi.example.com",
   "engine.webhook.url": "https://engine-service.example.com",
   "gov.notify.api.key": "xxxxxx",
-  "database.url": "jdbc:postgresql://dbUrl.example.com:5432/engine?sslmode=require&currentSchema=public"
+  "database.url": "jdbc:postgresql://dbUrl.example.com:5432/engine?sslmode=require&currentSchema=public",
+  "camunda.bpmn.upload.roles": "process_admin,bpmn_uploader",
+  "camunda.variable.encryption": true,
+  "encryption.passPhrase" : "passPhrase",
+  "encryption.salt": "salt"
 }
 ```
 

@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 public class AwsProperties {
 
     private String region;
-    private String bucketName;
     private Credentials credentials;
     private String snsRegion;
     private ElasticSearch elasticSearch;

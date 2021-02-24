@@ -28,7 +28,8 @@
             <appender-ref ref="STDOUT"/>
         </root>
     </springProfile>
-    <springProfile name="local">
+
+    <springProfile name="test">
         <include resource="org/springframework/boot/logging/logback/base.xml"/>
     </springProfile>
 </configuration>

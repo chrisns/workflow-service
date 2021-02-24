@@ -9,6 +9,7 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.github.tomjankes.wiremock.WireMockGroovy
+import io.digital.patterns.workflow.aws.AwsProperties
 import io.digital.patterns.workflow.pdf.PdfService
 import org.apache.groovy.util.Maps
 import org.camunda.bpm.engine.runtime.ProcessInstance
@@ -63,7 +64,7 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
     RestTemplate restTemplate
 
     def setupSpec() {
-        System.setProperty("aws.s3.formData", "formdata")
+        System.setProperty("aws.s3.case-bucket-name", "formdata")
         System.setProperty("aws.s3.pdfs", "pdfs")
         System.setProperty("ses.from.address", "from@from.com")
         System.setProperty('formApi.url', "http://localhost:${wmPort}")
@@ -95,7 +96,9 @@ class GenerateAndSendPdfBpmnSpec extends Specification {
                 .enablePathStyleAccess()
                 .build()
 
-        pdfService = new PdfService(
+        def awsProperties = new AwsProperties()
+        awsProperties.setCaseBucketName("formdata")
+        pdfService = new PdfService(awsProperties,
                 amazonS3,
                 amazonSimpleEmailService,
                 environment,
