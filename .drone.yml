@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: kubernetes
-name: default
+name: secrets
 
 platform:
   os: linux
@@ -65,53 +65,37 @@ steps:
     target:
     - secrets
 
-- name: deploy_to_dev_eforms_service
+- name: notify
   pull: if-not-exists
-  image: quay.io/ukhomeofficedigital/kd
-  commands:
-  - export SPRING_PROFILES_ACTIVE="dev"
-  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
-  - kd --insecure-skip-tls-verify -f kube/cert.yml
-  - kd --insecure-skip-tls-verify -f kube/secret.yml
-  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
-  - kd --insecure-skip-tls-verify -f kube/service.yml
-  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
-  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  image: plugins/slack
+  settings:
+    channel: cop-deployments
+    template: "{{#build.deployTo}}\n  *{{repo.name}} - Build {{build.number}} - {{uppercasefirst build.deployTo}} - {{uppercase build.status}}*\n  {{build.link}}\n{{else}}\n  *{{repo.name}} - Build {{build.number}} - Development - {{uppercase build.status}}*\n  {{build.link}}\n{{/build.deployTo}}\n"
+    username: Drone Build Watcher
   environment:
-    APP_NAME:
-      from_secret: WORKFLOW_SERVICE_NAME
-    AWS_ACCESS_KEY:
-      from_secret: DEV_WORKFLOW_SERVICE_AWS_ACCESS_KEY_ID
-    AWS_REGION:
-      from_secret: AWS_REGION
-    AWS_SECRETS_MANAGER_ENABLED:
-      from_secret: DEV_WORKFLOW_SERVICE_AWS_SECRETS_MANAGER_ENABLED
-    AWS_SECRET_KEY:
-      from_secret: DEV_WORKFLOW_SERVICE_AWS_SECRET_ACCESS_KEY
-    KUBE_NAMESPACE:
-      from_secret: DEV_KUBE_NAMESPACE_COP_EFORMS
-    KUBE_SERVER:
-      from_secret: DEV_KUBE_SERVER
-    KUBE_TOKEN:
-      from_secret: DEV_EFORMS_KUBE_TOKEN
-    NGINX_IMAGE:
-      from_secret: NGINX_IMAGE
-    NGINX_TAG:
-      from_secret: NGINX_TAG
-    WORKFLOW_SERVICE_IMAGE:
-      from_secret: WORKFLOW_SERVICE_IMAGE
-    WORKFLOW_SERVICE_NAME:
-      from_secret: WORKFLOW_SERVICE_NAME
-    WORKFLOW_SERVICE_URL:
-      from_secret: DEV_WORKFLOW_SERVICE_URL
+    SLACK_WEBHOOK:
+      from_secret: SLACK_WEBHOOK
   when:
     branch:
     - master
     event:
     - promote
     target:
-    - dev
+    - secrets
+    status:
+    - success
+    - failure
 
+---
+kind: pipeline
+type: kubernetes
+name: deploy_cop
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
 - name: deploy_to_dev_cop_service
   pull: if-not-exists
   image: quay.io/ukhomeofficedigital/kd
@@ -151,53 +135,6 @@ steps:
       from_secret: COP_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: DEV_COP_SERVICE_URL
-  when:
-    branch:
-    - master
-    event:
-    - promote
-    target:
-    - dev
-
-- name: deploy_to_dev_cerberus_service
-  pull: if-not-exists
-  image: quay.io/ukhomeofficedigital/kd
-  commands:
-  - export SPRING_PROFILES_ACTIVE="dev"
-  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
-  - kd --insecure-skip-tls-verify -f kube/cert.yml
-  - kd --insecure-skip-tls-verify -f kube/secret.yml
-  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
-  - kd --insecure-skip-tls-verify -f kube/service.yml
-  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
-  - kd --insecure-skip-tls-verify -f kube/ingress.yml
-  environment:
-    APP_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
-    AWS_ACCESS_KEY:
-      from_secret: DEV_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
-    AWS_REGION:
-      from_secret: AWS_REGION
-    AWS_SECRETS_MANAGER_ENABLED:
-      from_secret: DEV_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
-    AWS_SECRET_KEY:
-      from_secret: DEV_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
-    KUBE_NAMESPACE:
-      from_secret: DEV_KUBE_NAMESPACE_COP_CERBERUS
-    KUBE_SERVER:
-      from_secret: DEV_KUBE_SERVER
-    KUBE_TOKEN:
-      from_secret: DEV_CERBERUS_KUBE_TOKEN
-    NGINX_IMAGE:
-      from_secret: NGINX_IMAGE
-    NGINX_TAG:
-      from_secret: NGINX_TAG
-    WORKFLOW_SERVICE_IMAGE:
-      from_secret: WORKFLOW_SERVICE_IMAGE
-    WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
-    WORKFLOW_SERVICE_URL:
-      from_secret: DEV_CERBERUS_SERVICE_URL
   when:
     branch:
     - master
@@ -253,11 +190,40 @@ steps:
     target:
     - staging
 
-- name: deploy_to_staging_cerberus_service
+- name: notify
+  pull: if-not-exists
+  image: plugins/slack
+  settings:
+    channel: cop-deployments
+    template: "{{#build.deployTo}}\n  *{{repo.name}} - Build {{build.number}} - {{uppercasefirst build.deployTo}} - {{uppercase build.status}}*\n  {{build.link}}\n{{else}}\n  *{{repo.name}} - Build {{build.number}} - Development - {{uppercase build.status}}*\n  {{build.link}}\n{{/build.deployTo}}\n"
+    username: Drone Build Watcher
+  environment:
+    SLACK_WEBHOOK:
+      from_secret: SLACK_WEBHOOK
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    status:
+    - success
+    - failure
+
+---
+kind: pipeline
+type: kubernetes
+name: deploy_eforms
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: deploy_to_dev_eforms_service
   pull: if-not-exists
   image: quay.io/ukhomeofficedigital/kd
   commands:
-  - export SPRING_PROFILES_ACTIVE="staging"
+  - export SPRING_PROFILES_ACTIVE="dev"
   - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
   - kd --insecure-skip-tls-verify -f kube/cert.yml
   - kd --insecure-skip-tls-verify -f kube/secret.yml
@@ -267,21 +233,21 @@ steps:
   - kd --insecure-skip-tls-verify -f kube/ingress.yml
   environment:
     APP_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     AWS_ACCESS_KEY:
-      from_secret: STAGING_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
+      from_secret: DEV_WORKFLOW_SERVICE_AWS_ACCESS_KEY_ID
     AWS_REGION:
       from_secret: AWS_REGION
     AWS_SECRETS_MANAGER_ENABLED:
-      from_secret: STAGING_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+      from_secret: DEV_WORKFLOW_SERVICE_AWS_SECRETS_MANAGER_ENABLED
     AWS_SECRET_KEY:
-      from_secret: STAGING_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
+      from_secret: DEV_WORKFLOW_SERVICE_AWS_SECRET_ACCESS_KEY
     KUBE_NAMESPACE:
-      from_secret: STAGING_KUBE_NAMESPACE_COP_CERBERUS
+      from_secret: DEV_KUBE_NAMESPACE_COP_EFORMS
     KUBE_SERVER:
-      from_secret: STAGING_KUBE_SERVER
+      from_secret: DEV_KUBE_SERVER
     KUBE_TOKEN:
-      from_secret: STAGING_CERBERUS_KUBE_TOKEN
+      from_secret: DEV_EFORMS_KUBE_TOKEN
     NGINX_IMAGE:
       from_secret: NGINX_IMAGE
     NGINX_TAG:
@@ -289,16 +255,16 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
-      from_secret: STAGING_CERBERUS_SERVICE_URL
+      from_secret: DEV_WORKFLOW_SERVICE_URL
   when:
     branch:
     - master
     event:
     - promote
     target:
-    - staging_cerberus
+    - dev
 
 - name: deploy_to_production_eforms_service
   pull: if-not-exists
@@ -366,14 +332,174 @@ steps:
     - success
     - failure
 
-services:
-- name: docker
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+---
+kind: pipeline
+type: kubernetes
+name: deploy_cerberus
 
-- name: anchore-submission-server
-  pull: always
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: deploy_to_dev_cerberus_service
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
   commands:
-  - /run.sh server
+  - export SPRING_PROFILES_ACTIVE="dev"
+  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - kd --insecure-skip-tls-verify -f kube/cert.yml
+  - kd --insecure-skip-tls-verify -f kube/secret.yml
+  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
+  - kd --insecure-skip-tls-verify -f kube/service.yml
+  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
+  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  environment:
+    APP_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    AWS_ACCESS_KEY:
+      from_secret: DEV_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
+    AWS_REGION:
+      from_secret: AWS_REGION
+    AWS_SECRETS_MANAGER_ENABLED:
+      from_secret: DEV_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+    AWS_SECRET_KEY:
+      from_secret: DEV_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
+    KUBE_NAMESPACE:
+      from_secret: DEV_KUBE_NAMESPACE_COP_CERBERUS
+    KUBE_SERVER:
+      from_secret: DEV_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: DEV_CERBERUS_KUBE_TOKEN
+    NGINX_IMAGE:
+      from_secret: NGINX_IMAGE
+    NGINX_TAG:
+      from_secret: NGINX_TAG
+    WORKFLOW_SERVICE_IMAGE:
+      from_secret: WORKFLOW_SERVICE_IMAGE
+    WORKFLOW_SERVICE_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    WORKFLOW_SERVICE_URL:
+      from_secret: DEV_CERBERUS_SERVICE_URL
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - dev
+
+- name: deploy_to_staging_cerberus_service
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export SPRING_PROFILES_ACTIVE="staging"
+  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - kd --insecure-skip-tls-verify -f kube/cert.yml
+  - kd --insecure-skip-tls-verify -f kube/secret.yml
+  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
+  - kd --insecure-skip-tls-verify -f kube/service.yml
+  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
+  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  environment:
+    APP_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    AWS_ACCESS_KEY:
+      from_secret: STAGING_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
+    AWS_REGION:
+      from_secret: AWS_REGION
+    AWS_SECRETS_MANAGER_ENABLED:
+      from_secret: STAGING_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+    AWS_SECRET_KEY:
+      from_secret: STAGING_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
+    KUBE_NAMESPACE:
+      from_secret: STAGING_KUBE_NAMESPACE_COP_CERBERUS
+    KUBE_SERVER:
+      from_secret: STAGING_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: STAGING_CERBERUS_KUBE_TOKEN
+    NGINX_IMAGE:
+      from_secret: NGINX_IMAGE
+    NGINX_TAG:
+      from_secret: NGINX_TAG
+    WORKFLOW_SERVICE_IMAGE:
+      from_secret: WORKFLOW_SERVICE_IMAGE
+    WORKFLOW_SERVICE_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    WORKFLOW_SERVICE_URL:
+      from_secret: STAGING_CERBERUS_SERVICE_URL
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - staging_cerberus
+
+- name: deploy_to_production_cerberus_service
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export SPRING_PROFILES_ACTIVE="production"
+  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - kd --insecure-skip-tls-verify -f kube/cert.yml
+  - kd --insecure-skip-tls-verify -f kube/secret.yml
+  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
+  - kd --insecure-skip-tls-verify -f kube/service.yml
+  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
+  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  environment:
+    APP_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    AWS_ACCESS_KEY:
+      from_secret: PRODUCTION_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
+    AWS_REGION:
+      from_secret: AWS_REGION
+    AWS_SECRETS_MANAGER_ENABLED:
+      from_secret: PRODUCTION_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+    AWS_SECRET_KEY:
+      from_secret: PRODUCTION_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
+    KUBE_NAMESPACE:
+      from_secret: PRODUCTION_KUBE_NAMESPACE_COP_CERBERUS
+    KUBE_SERVER:
+      from_secret: PRODUCTION_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: PRODUCTION_CERBERUS_KUBE_TOKEN
+    NGINX_IMAGE:
+      from_secret: NGINX_IMAGE
+    NGINX_TAG:
+      from_secret: NGINX_TAG
+    WORKFLOW_SERVICE_IMAGE:
+      from_secret: WORKFLOW_SERVICE_IMAGE
+    WORKFLOW_SERVICE_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    WORKFLOW_SERVICE_URL:
+      from_secret: PRODUCTION_CERBERUS_SERVICE_URL
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - production_cerberus
+
+- name: notify
+  pull: if-not-exists
+  image: plugins/slack
+  settings:
+    channel: cop-deployments
+    template: "{{#build.deployTo}}\n  *{{repo.name}} - Build {{build.number}} - {{uppercasefirst build.deployTo}} - {{uppercase build.status}}*\n  {{build.link}}\n{{else}}\n  *{{repo.name}} - Build {{build.number}} - Development - {{uppercase build.status}}*\n  {{build.link}}\n{{/build.deployTo}}\n"
+    username: Drone Build Watcher
+  environment:
+    SLACK_WEBHOOK:
+      from_secret: SLACK_WEBHOOK
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    status:
+    - success
+    - failure
 
 ...
