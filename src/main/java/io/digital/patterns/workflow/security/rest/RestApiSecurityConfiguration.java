@@ -18,8 +18,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 
 @Configuration
@@ -50,6 +55,7 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(final HttpSecurity http) throws Exception {
         http
+                .cors(withDefaults())
                 .csrf().ignoringAntMatchers("/cases/**", "/engine-rest/**", "/webhook/**", "/actuator/**")
                 .and()
                 .requestMatchers().antMatchers("/engine-rest/**", "/cases/**", "/webhook/**")
@@ -68,6 +74,18 @@ public class RestApiSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and().oauth2ResourceServer()
                 .jwt()
                 .jwtAuthenticationConverter(keycloakAuthenticationConverter);
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowCredentials(true);
+        configuration.addAllowedOrigin("*");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
 
