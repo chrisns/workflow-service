@@ -481,7 +481,7 @@ steps:
     event:
     - promote
     target:
-    - dev
+    - sit
 
 
 - name: deploy_to_staging_cerberus_service
