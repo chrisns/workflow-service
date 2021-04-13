@@ -143,6 +143,53 @@ steps:
     target:
     - dev
 
+- name: deploy_to_sit_cop_service
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export SPRING_PROFILES_ACTIVE="sit"
+  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - kd --insecure-skip-tls-verify -f kube/cert.yml
+  - kd --insecure-skip-tls-verify -f kube/secret.yml
+  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
+  - kd --insecure-skip-tls-verify -f kube/service.yml
+  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
+  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  environment:
+    APP_NAME:
+      from_secret: COP_SERVICE_NAME
+    AWS_ACCESS_KEY:
+      from_secret: SIT_COP_SERVICE_AWS_ACCESS_KEY_ID
+    AWS_REGION:
+      from_secret: AWS_REGION
+    AWS_SECRETS_MANAGER_ENABLED:
+      from_secret: SIT_COP_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+    AWS_SECRET_KEY:
+      from_secret: SIT_COP_SERVICE_AWS_SECRET_ACCESS_KEY
+    KUBE_NAMESPACE:
+      from_secret: SIT_KUBE_NAMESPACE_COP
+    KUBE_SERVER:
+      from_secret: SIT_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: SIT_KUBE_TOKEN
+    NGINX_IMAGE:
+      from_secret: NGINX_IMAGE
+    NGINX_TAG:
+      from_secret: NGINX_TAG
+    WORKFLOW_SERVICE_IMAGE:
+      from_secret: WORKFLOW_SERVICE_IMAGE
+    WORKFLOW_SERVICE_NAME:
+      from_secret: COP_SERVICE_NAME
+    WORKFLOW_SERVICE_URL:
+      from_secret: SIT_COP_SERVICE_URL
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - sit
+
 - name: deploy_to_staging_cop_service
   pull: if-not-exists
   image: quay.io/ukhomeofficedigital/kd
@@ -388,6 +435,54 @@ steps:
     - promote
     target:
     - dev
+
+- name: deploy_to_sit_cerberus_service
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export SPRING_PROFILES_ACTIVE="sit"
+  - export WORKFLOW_SERVICE_TAG=$${DRONE_COMMIT_SHA}
+  - kd --insecure-skip-tls-verify -f kube/cert.yml
+  - kd --insecure-skip-tls-verify -f kube/secret.yml
+  - kd --insecure-skip-tls-verify -f kube/network-policy.yml
+  - kd --insecure-skip-tls-verify -f kube/service.yml
+  - kd --insecure-skip-tls-verify -f kube/deployment.yml --timeout=8m
+  - kd --insecure-skip-tls-verify -f kube/ingress.yml
+  environment:
+    APP_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    AWS_ACCESS_KEY:
+      from_secret: SIT_CERBERUS_SERVICE_AWS_ACCESS_KEY_ID
+    AWS_REGION:
+      from_secret: AWS_REGION
+    AWS_SECRETS_MANAGER_ENABLED:
+      from_secret: SIT_CERBERUS_SERVICE_AWS_SECRETS_MANAGER_ENABLED
+    AWS_SECRET_KEY:
+      from_secret: SIT_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
+    KUBE_NAMESPACE:
+      from_secret: SIT_KUBE_NAMESPACE_COP_CERBERUs
+    KUBE_SERVER:
+      from_secret: SIT_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: SIT_CERBERUS_KUBE_TOKEN
+    NGINX_IMAGE:
+      from_secret: NGINX_IMAGE
+    NGINX_TAG:
+      from_secret: NGINX_TAG
+    WORKFLOW_SERVICE_IMAGE:
+      from_secret: WORKFLOW_SERVICE_IMAGE
+    WORKFLOW_SERVICE_NAME:
+      from_secret: CERBERUS_SERVICE_NAME
+    WORKFLOW_SERVICE_URL:
+      from_secret: SIT_CERBERUS_SERVICE_URL
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - sit
+
 
 - name: deploy_to_staging_cerberus_service
   pull: if-not-exists
