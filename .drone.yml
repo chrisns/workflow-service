@@ -460,11 +460,11 @@ steps:
     AWS_SECRET_KEY:
       from_secret: SIT_CERBERUS_SERVICE_AWS_SECRET_ACCESS_KEY
     KUBE_NAMESPACE:
-      from_secret: SIT_KUBE_NAMESPACE_COP
+      from_secret: SIT_KUBE_NAMESPACE_COP_CERBERUs
     KUBE_SERVER:
       from_secret: SIT_KUBE_SERVER
     KUBE_TOKEN:
-      from_secret: SIT_KUBE_TOKEN
+      from_secret: SIT_CERBERUS_KUBE_TOKEN
     NGINX_IMAGE:
       from_secret: NGINX_IMAGE
     NGINX_TAG:
