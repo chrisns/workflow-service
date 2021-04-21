@@ -207,7 +207,7 @@ steps:
     event:
     - promote
     target:
-    - sit
+    - sit_cop
 
 - name: deploy_to_staging_cop_service
   pull: if-not-exists
@@ -500,7 +500,7 @@ steps:
     event:
     - promote
     target:
-    - sit
+    - sit_cerberus
 
 
 - name: deploy_to_staging_cerberus_service
