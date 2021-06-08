@@ -151,7 +151,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: COP_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: DEV_COP_SERVICE_URL
   when:
@@ -198,7 +198,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: COP_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: SIT_COP_SERVICE_URL
   when:
@@ -245,7 +245,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: COP_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: STAGING_COP_SERVICE_URL
   when:
@@ -292,7 +292,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: COP_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: PRODUCTION_COP_SERVICE_URL
   when:
@@ -491,7 +491,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: DEV_CERBERUS_SERVICE_URL
   when:
@@ -538,7 +538,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: SIT_CERBERUS_SERVICE_URL
   when:
@@ -586,7 +586,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: STAGING_CERBERUS_SERVICE_URL
   when:
@@ -633,7 +633,7 @@ steps:
     WORKFLOW_SERVICE_IMAGE:
       from_secret: WORKFLOW_SERVICE_IMAGE
     WORKFLOW_SERVICE_NAME:
-      from_secret: CERBERUS_SERVICE_NAME
+      from_secret: WORKFLOW_SERVICE_NAME
     WORKFLOW_SERVICE_URL:
       from_secret: PRODUCTION_CERBERUS_SERVICE_URL
   when:
